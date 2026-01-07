@@ -267,10 +267,11 @@ export default function DocumentsPage() {
         />
       )}
 
-      {showLawyerReviewDialog && (
+      {showLawyerReviewDialog && selectedDoc && (
         <LawyerReviewDialog
+          documentType={selectedDoc.type}
           onConfirm={handleLawyerReviewConfirm}
-          onCancel={() => setShowLawyerReviewDialog(false)}
+          onClose={() => setShowLawyerReviewDialog(false)}
         />
       )}
 

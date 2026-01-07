@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 const PORTAL_URL = process.env.NEXT_PUBLIC_LAWYER_PORTAL_URL;
 
 export interface ReviewSubmission {
@@ -15,13 +13,19 @@ export async function submitDocumentForReview(
   submission: ReviewSubmission
 ): Promise<{ reviewId: string; status: string; message: string }> {
   try {
-    const response = await axios.post(`${PORTAL_URL}/submit-review`, {
-      ...submission,
-      submittedAt: new Date().toISOString(),
-      deadline: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+    const response = await fetch(`${PORTAL_URL}/submit-review`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...submission,
+        submittedAt: new Date().toISOString(),
+        deadline: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+      }),
     });
 
-    return response.data;
+    return await response.json();
   } catch (error) {
     console.error('Erreur soumission avocat:', error);
     return {
@@ -34,8 +38,8 @@ export async function submitDocumentForReview(
 
 export async function checkReviewStatus(reviewId: string): Promise<any> {
   try {
-    const response = await axios.get(`${PORTAL_URL}/review-status/${reviewId}`);
-    return response.data;
+    const response = await fetch(`${PORTAL_URL}/review-status/${reviewId}`);
+    return await response.json();
   } catch (error) {
     return { status: 'pending', message: 'Vérification en cours...' };
   }
@@ -43,8 +47,9 @@ export async function checkReviewStatus(reviewId: string): Promise<any> {
 
 export async function getRevisedDocument(reviewId: string): Promise<string | null> {
   try {
-    const response = await axios.get(`${PORTAL_URL}/revised-document/${reviewId}`);
-    return response.data.revisedContent;
+    const response = await fetch(`${PORTAL_URL}/revised-document/${reviewId}`);
+    const data = await response.json();
+    return data.revisedContent;
   } catch (error) {
     console.error('Erreur récupération document révisé:', error);
     return null;
@@ -57,14 +62,20 @@ export async function requestRefund(
   reason: string
 ): Promise<boolean> {
   try {
-    const response = await axios.post(`${PORTAL_URL}/request-refund`, {
-      reviewId,
-      purchaseId,
-      reason,
-      requestedAt: new Date().toISOString(),
+    const response = await fetch(`${PORTAL_URL}/request-refund`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        reviewId,
+        purchaseId,
+        reason,
+        requestedAt: new Date().toISOString(),
+      }),
     });
 
-    return response.status === 200;
+    return response.ok;
   } catch (error) {
     console.error('Erreur demande de remboursement:', error);
     return false;
