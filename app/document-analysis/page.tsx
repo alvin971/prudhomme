@@ -24,7 +24,7 @@ export default function DocumentAnalysisPage() {
 
   const analyzeDocuments = async () => {
     if (selectedImages.length === 0) {
-      alert('Veuillez sélectionner au moins une image');
+      alert('Veuillez sélectionner au moins un document');
       return;
     }
 
@@ -32,33 +32,27 @@ export default function DocumentAnalysisPage() {
     setAnalysisResult(null);
 
     try {
-      // Simuler l'analyse (dans une vraie app, appeler l'API Anthropic avec vision)
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Résultat simulé
-      setAnalysisResult({
-        type: 'Contrat de travail CDI',
-        summary: 'Ce document est un contrat de travail à durée indéterminée établi entre un employeur et un salarié. Il définit les conditions d\'emploi, la rémunération, et les obligations des deux parties.',
-        confidence: 0.92,
-        key_points: [
-          'Contrat CDI à temps plein',
-          'Salaire mensuel brut de 2 500€',
-          'Période d\'essai de 2 mois',
-          'Horaires: 35h/semaine',
-          'Date de début: 1er janvier 2025'
-        ],
-        warnings: [
-          'Vérifier que la clause de non-concurrence est équilibrée',
-          'S\'assurer que la convention collective applicable est mentionnée'
-        ],
-        recommendations: [
-          'Faire relire le contrat par un avocat avant signature',
-          'Vérifier la conformité avec le code du travail',
-          'Conserver une copie signée du contrat'
-        ]
+      // Préparer les fichiers pour l'envoi
+      const formData = new FormData();
+      selectedImages.forEach((file) => {
+        formData.append('files', file);
       });
+
+      // Appeler l'API d'analyse
+      const response = await fetch('/api/analyze-document', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de l\'analyse');
+      }
+
+      const result = await response.json();
+      setAnalysisResult(result);
     } catch (error) {
-      alert('❌ Erreur lors de l\'analyse');
+      console.error('Erreur analyse:', error);
+      alert('❌ Erreur lors de l\'analyse du document');
     } finally {
       setIsAnalyzing(false);
     }
