@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
-import { FaBars, FaCamera, FaImage, FaSpinner } from 'react-icons/fa';
+import { FaBars, FaCamera, FaImage, FaSpinner, FaFilePdf } from 'react-icons/fa';
 import Drawer from '@/components/common/Drawer';
 
 export default function DocumentAnalysisPage() {
@@ -8,7 +8,8 @@ export default function DocumentAnalysisPage() {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -93,9 +94,9 @@ export default function DocumentAnalysisPage() {
         {/* Image Selection */}
         <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
           <h3 className="text-lg font-semibold text-[#1E3A8A] mb-4">Ajouter des documents</h3>
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-3 gap-3 mb-4">
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => imageInputRef.current?.click()}
               disabled={isAnalyzing}
               className="flex items-center justify-center gap-2 bg-[#1E3A8A] text-white px-4 py-3 rounded-lg hover:bg-[#1E40AF] disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -103,9 +104,9 @@ export default function DocumentAnalysisPage() {
             </button>
             <button
               onClick={() => {
-                if (fileInputRef.current) {
-                  fileInputRef.current.setAttribute('capture', 'environment');
-                  fileInputRef.current.click();
+                if (imageInputRef.current) {
+                  imageInputRef.current.setAttribute('capture', 'environment');
+                  imageInputRef.current.click();
                 }
               }}
               disabled={isAnalyzing}
@@ -113,11 +114,26 @@ export default function DocumentAnalysisPage() {
             >
               <FaCamera /> Prendre une photo
             </button>
+            <button
+              onClick={() => pdfInputRef.current?.click()}
+              disabled={isAnalyzing}
+              className="flex items-center justify-center gap-2 bg-[#DC2626] text-white px-4 py-3 rounded-lg hover:bg-[#B91C1C] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FaFilePdf /> Ajouter PDF
+            </button>
           </div>
           <input
-            ref={fileInputRef}
+            ref={imageInputRef}
             type="file"
             accept="image/*"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          <input
+            ref={pdfInputRef}
+            type="file"
+            accept=".pdf,application/pdf"
             multiple
             onChange={handleFileSelect}
             className="hidden"
@@ -139,11 +155,20 @@ export default function DocumentAnalysisPage() {
             <div className="grid grid-cols-3 gap-2 mb-4">
               {selectedImages.map((file, index) => (
                 <div key={index} className="relative">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`Document ${index + 1}`}
-                    className="w-full h-24 object-cover rounded-lg"
-                  />
+                  {file.type === 'application/pdf' ? (
+                    <div className="w-full h-24 bg-[#DC2626]/10 rounded-lg flex flex-col items-center justify-center border-2 border-[#DC2626]">
+                      <FaFilePdf className="text-3xl text-[#DC2626] mb-1" />
+                      <p className="text-xs text-[#DC2626] font-semibold truncate w-full px-2 text-center">
+                        {file.name}
+                      </p>
+                    </div>
+                  ) : (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`Document ${index + 1}`}
+                      className="w-full h-24 object-cover rounded-lg"
+                    />
+                  )}
                   <button
                     onClick={() => removeImage(index)}
                     className="absolute top-1 right-1 bg-[#EF4444] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
