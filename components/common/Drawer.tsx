@@ -1,6 +1,6 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { FaTimes, FaFileAlt, FaCommentDots, FaSearch, FaFolder, FaBalanceScale, FaUserTie } from 'react-icons/fa';
+import { FaTimes, FaFileAlt, FaCommentDots, FaSearch, FaFolder, FaBalanceScale, FaGlobe } from 'react-icons/fa';
 
 interface DrawerProps {
   isOpen: boolean;
@@ -101,9 +101,9 @@ export default function Drawer({ isOpen, onClose }: DrawerProps) {
               />
 
               <MenuItem
-                icon={<FaUserTie />}
-                title="Avocats"
-                subtitle="Trouver un avocat"
+                icon={<FaGlobe />}
+                title="Démarches en Ligne"
+                subtitle="Procédures administratives"
                 onClick={() => handleNavigation('/lawyers')}
               />
             </nav>
