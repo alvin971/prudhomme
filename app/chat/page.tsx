@@ -4,13 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useDocuments } from '@/lib/contexts/DocumentsContext';
 import { sendMessageToAI, generateDocument } from '@/lib/services/anthropicService';
-import { shouldGenerateDocument, extractDocumentType } from '@/lib/utils/prompts';
+import { extractDocumentType } from '@/lib/utils/prompts';
 import { generatePDF } from '@/lib/services/documentService';
-import { FaMicrophone, FaPaperPlane, FaBars } from 'react-icons/fa';
+import { FaMicrophone, FaPaperPlane, FaBars, FaFileAlt } from 'react-icons/fa';
 import Drawer from '@/components/common/Drawer';
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
 }
@@ -25,6 +25,9 @@ export default function ChatPage() {
   const [isListening, setIsListening] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [typingMessage, setTypingMessage] = useState('');
+  const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [hasShown100Message, setHasShown100Message] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -43,6 +46,113 @@ export default function ChatPage() {
       setTypingMessage(text.substring(0, i + 1));
     }
     return text;
+  };
+
+  // Calculate completion percentage based on conversation progress
+  const calculateCompletionPercentage = (allMessages: Message[]): number => {
+    const assistantMessages = allMessages.filter(m => m.role === 'assistant');
+    const conversationText = allMessages.map(m => m.content).join(' ').toLowerCase();
+
+    let percentage = 0;
+
+    // Base score: 20% for having started a conversation
+    if (assistantMessages.length > 0) percentage += 20;
+
+    // Check for key information categories (20% each)
+    const categories = [
+      // Problem description
+      ['problème', 'situation', 'difficulté', 'litige', 'conflit'],
+      // Dates or timeline
+      ['date', 'quand', 'depuis', 'jour', 'mois'],
+      // Parties involved
+      ['qui', 'employeur', 'client', 'société', 'partie'],
+      // Amount or compensation
+      ['montant', 'euro', 'salaire', 'paiement', 'somme', 'argent']
+    ];
+
+    categories.forEach(keywords => {
+      if (keywords.some(keyword => conversationText.includes(keyword))) {
+        percentage += 20;
+      }
+    });
+
+    // Cap at 100%
+    return Math.min(percentage, 100);
+  };
+
+  // Effect to automatically send system message when reaching 100%
+  useEffect(() => {
+    if (completionPercentage === 100 && !hasShown100Message && messages.length > 0) {
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: '✅ La génération de document est prête ! As-tu d\'autres informations à ajouter pour compléter les infos et améliorer la qualité du document généré ?',
+        timestamp: new Date()
+      }]);
+      setHasShown100Message(true);
+    }
+  }, [completionPercentage, hasShown100Message, messages.length]);
+
+  // Handler for document generation button
+  const handleGenerateDocument = async () => {
+    if (completionPercentage < 100 || isGenerating) return;
+
+    setIsGenerating(true);
+
+    try {
+      const conversationText = messages.map(m => m.role + ': ' + m.content).join('\n');
+      const documentType = extractDocumentType(conversationText);
+
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '⏳ Génération du document en cours...',
+        timestamp: new Date()
+      }]);
+
+      const documentContent = await generateDocument(documentType, conversationText);
+      const pdfBlob = generatePDF(documentContent, documentType);
+
+      const testDocuments = JSON.parse(localStorage.getItem('test_documents') || '[]');
+      const docId = 'test_' + Date.now();
+      testDocuments.push({
+        id: docId,
+        type: documentType,
+        fileName: documentType.replaceAll(' ', '_') + '_' + Date.now() + '.pdf',
+        createdAt: new Date().toISOString(),
+        textContent: documentContent,
+      });
+      localStorage.setItem('test_documents', JSON.stringify(testDocuments));
+
+      if (user) {
+        await addDocument({
+          type: documentType,
+          fileName: documentType.replaceAll(' ', '_') + '_' + Date.now() + '.pdf',
+          createdAt: new Date(),
+          textContent: documentContent,
+        });
+      }
+
+      setMessages(prev => [
+        ...prev.slice(0, -1),
+        {
+          role: 'assistant',
+          content: '✅ Document "' + documentType + '" généré avec succès !\n\n📄 Retrouvez-le dans "Mes Documents"',
+          timestamp: new Date()
+        }
+      ]);
+
+      // Reset for next generation
+      setCompletionPercentage(0);
+      setHasShown100Message(false);
+    } catch (error) {
+      console.error('Erreur génération document:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '❌ Une erreur est survenue lors de la génération. Veuillez réessayer.',
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const startVoiceRecognition = () => {
@@ -89,59 +199,31 @@ export default function ChatPage() {
 
     try {
       const conversationMessages = [...messages, userMessage];
-      const response = await sendMessageToAI(conversationMessages);
+      // Filter out system messages and map to service Message type
+      const aiMessages = conversationMessages
+        .filter(m => m.role !== 'system')
+        .map(m => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content
+        }));
+      const response = await sendMessageToAI(aiMessages);
 
       await typewriterEffect(response);
 
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: response,
-        timestamp: new Date()
-      }]);
-      setTypingMessage('');
-
-      if (shouldGenerateDocument(response)) {
-        const conversationText = conversationMessages.map(m => m.role + ': ' + m.content).join('\n');
-        const documentType = extractDocumentType(conversationText);
-
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: '⏳ Génération du document en cours...',
+      setMessages(prev => {
+        const updatedMessages: Message[] = [...prev, {
+          role: 'assistant' as const,
+          content: response,
           timestamp: new Date()
-        }]);
+        }];
 
-        const documentContent = await generateDocument(documentType, conversationText);
-        const pdfBlob = generatePDF(documentContent, documentType);
+        // Calculate and update completion percentage
+        const newPercentage = calculateCompletionPercentage(updatedMessages);
+        setCompletionPercentage(newPercentage);
 
-        const testDocuments = JSON.parse(localStorage.getItem('test_documents') || '[]');
-        const docId = 'test_' + Date.now();
-        testDocuments.push({
-          id: docId,
-          type: documentType,
-          fileName: documentType.replaceAll(' ', '_') + '_' + Date.now() + '.pdf',
-          createdAt: new Date().toISOString(),
-          textContent: documentContent,
-        });
-        localStorage.setItem('test_documents', JSON.stringify(testDocuments));
-
-        if (user) {
-          await addDocument({
-            type: documentType,
-            fileName: documentType.replaceAll(' ', '_') + '_' + Date.now() + '.pdf',
-            createdAt: new Date(),
-            textContent: documentContent,
-          });
-        }
-
-        setMessages(prev => [
-          ...prev.slice(0, -1),
-          {
-            role: 'assistant',
-            content: '✅ Document "' + documentType + '" généré avec succès !\n\n📄 Retrouvez-le dans "Mes Documents"',
-            timestamp: new Date()
-          }
-        ]);
-      }
+        return updatedMessages;
+      });
+      setTypingMessage('');
     } catch (error) {
       console.error('Erreur:', error);
       setMessages(prev => [...prev, {
@@ -188,10 +270,12 @@ export default function ChatPage() {
         ) : (
           <div className="p-4 space-y-4 pb-32">
             {messages.map((msg, i) => (
-              <div key={i} className={'flex ' + (msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+              <div key={i} className={'flex ' + (msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start')}>
                 <div className={'max-w-[75%] px-4 py-3 ' + (
                   msg.role === 'user'
                     ? 'bg-[#1E3A8A] text-white rounded-[18px]'
+                    : msg.role === 'system'
+                    ? 'bg-[#10B981] text-white rounded-[18px] text-center'
                     : 'bg-transparent text-[#1E3A8A] rounded-[18px]'
                 )} style={{ lineHeight: 1.4 }}>
                   <p className="whitespace-pre-wrap text-[15px]">{msg.content}</p>
@@ -219,6 +303,24 @@ export default function ChatPage() {
           </div>
         )}
       </div>
+
+      {/* Document Generation Button - Bottom Left */}
+      {completionPercentage > 0 && (
+        <button
+          onClick={handleGenerateDocument}
+          disabled={completionPercentage < 100 || isGenerating}
+          className={`fixed bottom-24 left-4 px-6 py-3 rounded-full font-semibold shadow-lg transition-all z-10 ${
+            completionPercentage === 100 && !isGenerating
+              ? 'bg-[#10B981] text-white hover:bg-[#059669] animate-pulse'
+              : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <FaFileAlt />
+            <span>Génération de document {completionPercentage}%</span>
+          </div>
+        </button>
+      )}
 
       <div className="bg-white border-t border-[#E2E8F0] p-4">
         <div className="flex items-center gap-2 max-w-4xl mx-auto">
