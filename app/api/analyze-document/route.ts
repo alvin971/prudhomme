@@ -57,9 +57,9 @@ export async function POST(req: NextRequest) {
       } else if (file.type === 'image/gif') {
         mediaType = 'image/gif';
       } else if (file.type === 'application/pdf') {
-        // Pour les PDFs, on va utiliser la première page comme image
-        // Note: Claude peut lire les PDFs directement avec le bon media type
-        mediaType = 'application/pdf';
+        // PDFs ne sont pas supportés pour le moment
+        console.warn('⚠️ PDF file detected, skipping:', file.name);
+        continue;
       }
 
       imageContents.push({
