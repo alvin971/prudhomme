@@ -23,7 +23,13 @@ export async function POST(req: NextRequest) {
 
     for (const file of files) {
       const bytes = await file.arrayBuffer();
-      const base64 = Buffer.from(bytes).toString('base64');
+      // Utiliser btoa au lieu de Buffer pour Edge Runtime
+      const uint8Array = new Uint8Array(bytes);
+      let binary = '';
+      for (let i = 0; i < uint8Array.length; i++) {
+        binary += String.fromCharCode(uint8Array[i]);
+      }
+      const base64 = btoa(binary);
 
       // Détecter le type MIME
       let mediaType = 'image/jpeg';
