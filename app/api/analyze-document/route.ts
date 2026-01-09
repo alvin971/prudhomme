@@ -8,8 +8,13 @@ const MODEL = 'claude-3-5-haiku-20241022';
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('🔍 Starting document analysis...');
+    console.log('API Key present:', !!ANTHROPIC_API_KEY);
+
     const formData = await req.formData();
     const files = formData.getAll('files') as File[];
+
+    console.log('📄 Files received:', files.length);
 
     if (files.length === 0) {
       return NextResponse.json(
@@ -18,10 +23,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!ANTHROPIC_API_KEY) {
+      console.error('❌ ANTHROPIC_API_KEY is missing');
+      return NextResponse.json(
+        { error: 'Configuration API manquante' },
+        { status: 500 }
+      );
+    }
+
     // Convertir les fichiers en base64
     const imageContents = [];
 
     for (const file of files) {
+      console.log(`📎 Processing file: ${file.name}, type: ${file.type}, size: ${file.size}`);
+
       const bytes = await file.arrayBuffer();
       // Utiliser btoa au lieu de Buffer pour Edge Runtime
       const uint8Array = new Uint8Array(bytes);
@@ -30,6 +45,8 @@ export async function POST(req: NextRequest) {
         binary += String.fromCharCode(uint8Array[i]);
       }
       const base64 = btoa(binary);
+
+      console.log(`✅ Base64 encoded, length: ${base64.length}`);
 
       // Détecter le type MIME
       let mediaType = 'image/jpeg';
@@ -76,6 +93,9 @@ export async function POST(req: NextRequest) {
       ],
     };
 
+    console.log('🚀 Calling Claude API...');
+    console.log('Request body size:', JSON.stringify(requestBody).length);
+
     const response = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
       headers: {
@@ -86,23 +106,29 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(requestBody),
     });
 
+    console.log('📡 Response status:', response.status);
+
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Claude API error:', errorData);
+      console.error('❌ Claude API error:', errorData);
       return NextResponse.json(
-        { error: 'Erreur lors de l\'analyse par IA' },
+        { error: `Erreur API (${response.status}): ${errorData.substring(0, 200)}` },
         { status: response.status }
       );
     }
 
     const data = await response.json();
+    console.log('✅ Claude response received');
+
     const content = data.content[0].text;
 
     // Parser la réponse JSON de Claude
     try {
       const analysisResult = JSON.parse(content);
+      console.log('✅ Analysis successful');
       return NextResponse.json(analysisResult);
     } catch (e) {
+      console.warn('⚠️ Claude response is not JSON, wrapping it');
       // Si Claude n'a pas renvoyé du JSON valide, structurer la réponse
       return NextResponse.json({
         type: 'Document juridique',
@@ -114,9 +140,10 @@ export async function POST(req: NextRequest) {
       });
     }
   } catch (error: any) {
-    console.error('Document analysis error:', error);
+    console.error('❌ Document analysis error:', error);
+    console.error('Error stack:', error.stack);
     return NextResponse.json(
-      { error: error.message || 'Erreur interne du serveur' },
+      { error: `Erreur: ${error.message || 'Erreur interne du serveur'}` },
       { status: 500 }
     );
   }
