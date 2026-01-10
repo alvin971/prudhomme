@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useDocuments } from '@/lib/contexts/DocumentsContext';
 import { sendMessageToAI, generateDocument } from '@/lib/services/anthropicService';
-import { extractDocumentType } from '@/lib/utils/prompts';
+import { extractDocumentType, extractCompletionPercentage, removeCompletionIndicator } from '@/lib/utils/prompts';
 import { generatePDF } from '@/lib/services/documentService';
 import { FaMicrophone, FaPaperPlane, FaBars, FaFileAlt } from 'react-icons/fa';
 import Drawer from '@/components/common/Drawer';
@@ -48,37 +48,6 @@ export default function ChatPage() {
     return text;
   };
 
-  // Calculate completion percentage based on conversation progress
-  const calculateCompletionPercentage = (allMessages: Message[]): number => {
-    const assistantMessages = allMessages.filter(m => m.role === 'assistant');
-    const conversationText = allMessages.map(m => m.content).join(' ').toLowerCase();
-
-    let percentage = 0;
-
-    // Base score: 20% for having started a conversation
-    if (assistantMessages.length > 0) percentage += 20;
-
-    // Check for key information categories (20% each)
-    const categories = [
-      // Problem description
-      ['problème', 'situation', 'difficulté', 'litige', 'conflit'],
-      // Dates or timeline
-      ['date', 'quand', 'depuis', 'jour', 'mois'],
-      // Parties involved
-      ['qui', 'employeur', 'client', 'société', 'partie'],
-      // Amount or compensation
-      ['montant', 'euro', 'salaire', 'paiement', 'somme', 'argent']
-    ];
-
-    categories.forEach(keywords => {
-      if (keywords.some(keyword => conversationText.includes(keyword))) {
-        percentage += 20;
-      }
-    });
-
-    // Cap at 100%
-    return Math.min(percentage, 100);
-  };
 
   // Effect to automatically send system message when reaching 100%
   useEffect(() => {
@@ -208,21 +177,22 @@ export default function ChatPage() {
         }));
       const response = await sendMessageToAI(aiMessages);
 
-      await typewriterEffect(response);
+      // Extract completion percentage from AI response
+      const aiPercentage = extractCompletionPercentage(response);
+      if (aiPercentage !== null) {
+        setCompletionPercentage(aiPercentage);
+      }
 
-      setMessages(prev => {
-        const updatedMessages: Message[] = [...prev, {
-          role: 'assistant' as const,
-          content: response,
-          timestamp: new Date()
-        }];
+      // Remove the completion indicator from the displayed text
+      const cleanResponse = removeCompletionIndicator(response);
 
-        // Calculate and update completion percentage
-        const newPercentage = calculateCompletionPercentage(updatedMessages);
-        setCompletionPercentage(newPercentage);
+      await typewriterEffect(cleanResponse);
 
-        return updatedMessages;
-      });
+      setMessages(prev => [...prev, {
+        role: 'assistant' as const,
+        content: cleanResponse,
+        timestamp: new Date()
+      }]);
       setTypingMessage('');
     } catch (error) {
       console.error('Erreur:', error);

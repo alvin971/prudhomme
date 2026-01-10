@@ -43,23 +43,34 @@ au moment de la génération du document seulement.
 
 4. **MÉMORISE TOUT** : Chaque info pour la génération finale
 
-5. **SCORE DE COMPLÉTUDE** : Quand tu as 85%+ des infos nécessaires, propose la génération
+5. **SCORE DE COMPLÉTUDE** : Évalue intelligemment le % d'informations collectées
+
+## ⚠️ RÈGLE OBLIGATOIRE - INDICATEUR DE PROGRESSION
+
+À LA FIN DE CHAQUE RÉPONSE, tu DOIS ajouter sur la dernière ligne :
+[COMPLETION:X%]
+
+Où X est ton estimation intelligente de la complétude des informations :
+- 0-20% : Tu viens de comprendre le problème/type de document
+- 20-40% : Tu as les faits de base mais manque de détails importants
+- 40-60% : Tu as les éléments principaux mais besoin de précisions
+- 60-80% : Tu as presque tout, il manque quelques détails
+- 80-99% : Tu as toutes les infos essentielles, quelques bonus possibles
+- 100% : Tu as TOUTES les informations nécessaires pour un document parfait
+
+SOIS HONNÊTE et INTELLIGENT dans ton évaluation. Ne monte pas trop vite le pourcentage.
+Ne demande JAMAIS à l'utilisateur s'il veut générer le document.
+
+Exemple de réponse :
+"D'accord, je comprends. Pour bien préparer votre mise en demeure, j'ai besoin de savoir : quel montant exact est dû ? Et depuis quelle date ce paiement aurait dû être effectué ?
+
+[COMPLETION:25%]"
 
 ## TONE
 - Accessible et clair (pas de jargon inutile)
 - Confirme par paraphrase : "Si je comprends bien..."
 - Professionnel mais bienveillant
-
-## ⚠️ RÈGLE CRITIQUE - TRANSITION VERS GÉNÉRATION
-
-Une fois que l'utilisateur dit "oui", "d'accord", "génère", "c'est bon", etc. :
-
-**RÉPONDS EXACTEMENT CECI (mot pour mot)** :
-"GENERATE_DOCUMENT"
-
-NE PAS écrire le document dans le chat.
-NE PAS commencer à rédiger.
-Juste répondre : "GENERATE_DOCUMENT"`;
+- NE JAMAIS proposer de générer le document toi-même`;
 
 /**
  * Prompt de génération de document (niveau avocat expert)
@@ -216,10 +227,23 @@ C'est tout. Génère un chef-d'œuvre juridique.`;
 }
 
 /**
- * Détecte si l'IA demande à générer le document
+ * Extrait le pourcentage de complétion de la réponse de l'IA
  */
-export function shouldGenerateDocument(response: string): boolean {
-  return response.trim().toUpperCase().includes('GENERATE_DOCUMENT');
+export function extractCompletionPercentage(response: string): number | null {
+  // Cherche le pattern [COMPLETION:X%] à la fin de la réponse
+  const match = response.match(/\[COMPLETION:(\d+)%\]/i);
+  if (match && match[1]) {
+    const percentage = parseInt(match[1], 10);
+    return Math.min(Math.max(percentage, 0), 100); // Clamp entre 0 et 100
+  }
+  return null;
+}
+
+/**
+ * Retire l'indicateur de complétion du texte affiché à l'utilisateur
+ */
+export function removeCompletionIndicator(response: string): string {
+  return response.replace(/\s*\[COMPLETION:\d+%\]\s*/gi, '').trim();
 }
 
 /**
