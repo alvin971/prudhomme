@@ -25,8 +25,15 @@ export default function ChatPage() {
   const [isListening, setIsListening] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [typingMessage, setTypingMessage] = useState('');
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioLevel, setAudioLevel] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -47,32 +54,128 @@ export default function ChatPage() {
 
 
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopVoiceRecognition();
+    };
+  }, []);
+
+  const visualizeAudio = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(stream);
+
+      analyser.fftSize = 256;
+      microphone.connect(analyser);
+
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      const updateLevel = () => {
+        if (analyserRef.current) {
+          analyserRef.current.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((a, b) => a + b) / bufferLength;
+          setAudioLevel(average / 255); // Normalize to 0-1
+          animationFrameRef.current = requestAnimationFrame(updateLevel);
+        }
+      };
+
+      updateLevel();
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+    }
+  };
+
+  const startTimer = () => {
+    setRecordingTime(0);
+    timerIntervalRef.current = setInterval(() => {
+      setRecordingTime(prev => prev + 1);
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    setRecordingTime(0);
+  };
+
+  const stopAudioVisualization = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    setAudioLevel(0);
+  };
+
   const startVoiceRecognition = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'fr-FR';
-      recognition.continuous = false;
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      alert('La reconnaissance vocale n\'est pas supportée par votre navigateur');
+      return;
+    }
 
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'fr-FR';
+    recognition.continuous = true;
+    recognition.interimResults = false;
 
-      recognition.onend = () => {
-        setIsListening(false);
-      };
+    recognitionRef.current = recognition;
 
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setInput(transcript);
-        setIsListening(false);
-      };
+    recognition.onstart = () => {
+      setIsListening(true);
+      startTimer();
+      visualizeAudio();
+    };
 
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
+    recognition.onend = () => {
+      setIsListening(false);
+      stopTimer();
+      stopAudioVisualization();
+    };
 
-      recognition.start();
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[event.results.length - 1][0].transcript;
+      // IMPORTANT: Append au lieu de remplacer
+      setInput(prev => prev ? prev + ' ' + transcript : transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+      stopTimer();
+      stopAudioVisualization();
+    };
+
+    recognition.start();
+  };
+
+  const stopVoiceRecognition = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+    stopTimer();
+    stopAudioVisualization();
+  };
+
+  const toggleVoiceRecognition = () => {
+    if (isListening) {
+      stopVoiceRecognition();
+    } else {
+      startVoiceRecognition();
     }
   };
 
@@ -232,13 +335,57 @@ export default function ChatPage() {
         )}
       </div>
 
+      {/* Recording Overlay - Style ChatGPT */}
+      {isListening && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-11/12 text-center">
+            {/* Timer */}
+            <div className="text-4xl font-bold text-[#1E3A8A] mb-6">
+              {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+            </div>
+
+            {/* Audio Visualization */}
+            <div className="flex items-center justify-center gap-1 h-24 mb-6">
+              {[...Array(40)].map((_, i) => {
+                const height = Math.max(10, audioLevel * 100 * (0.5 + Math.random() * 0.5));
+                return (
+                  <div
+                    key={i}
+                    className="w-1 bg-[#1E3A8A] rounded-full transition-all duration-75"
+                    style={{
+                      height: `${height}%`,
+                      opacity: 0.3 + audioLevel * 0.7
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Texte en cours */}
+            {input && (
+              <div className="text-sm text-gray-600 mb-6 max-h-24 overflow-y-auto">
+                {input}
+              </div>
+            )}
+
+            {/* Bouton Stop */}
+            <button
+              onClick={stopVoiceRecognition}
+              className="bg-red-500 text-white px-8 py-3 rounded-full font-semibold hover:bg-red-600 transition-colors"
+            >
+              Arrêter l'enregistrement
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white border-t border-[#E2E8F0] p-3 sm:p-4 flex-shrink-0 safe-bottom">
         <div className="flex items-center gap-2 max-w-4xl mx-auto">
           <button
-            onClick={startVoiceRecognition}
-            disabled={loading || isListening}
+            onClick={toggleVoiceRecognition}
+            disabled={loading}
             className={'p-2.5 sm:p-3 rounded-full transition-colors flex-shrink-0 ' + (
-              isListening ? 'bg-red-500 text-white' : 'bg-[#F8FAFC] text-[#1E3A8A] hover:bg-[#E2E8F0]'
+              isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#F8FAFC] text-[#1E3A8A] hover:bg-[#E2E8F0]'
             )}
           >
             <FaMicrophone className="text-base sm:text-lg" />
