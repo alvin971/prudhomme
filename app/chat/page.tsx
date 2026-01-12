@@ -34,6 +34,7 @@ export default function ChatPage() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [interimTranscript, setInterimTranscript] = useState('');
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -50,6 +51,29 @@ export default function ChatPage() {
       setTypingMessage(text.substring(0, i + 1));
     }
     return text;
+  };
+
+  // Ajoute ponctuation intelligente au texte (comme ChatGPT)
+  const addSmartPunctuation = (text: string): string => {
+    if (!text.trim()) return text;
+
+    let result = text.trim();
+
+    // Première lettre en majuscule
+    result = result.charAt(0).toUpperCase() + result.slice(1);
+
+    // Ajoute un point à la fin si pas de ponctuation
+    const lastChar = result.charAt(result.length - 1);
+    if (!['.', '!', '?', ',', ';'].includes(lastChar)) {
+      result += '.';
+    }
+
+    // Majuscule après point
+    result = result.replace(/\.\s+([a-z])/g, (match, letter) => '. ' + letter.toUpperCase());
+    result = result.replace(/\?\s+([a-z])/g, (match, letter) => '? ' + letter.toUpperCase());
+    result = result.replace(/\!\s+([a-z])/g, (match, letter) => '! ' + letter.toUpperCase());
+
+    return result;
   };
 
 
@@ -129,7 +153,7 @@ export default function ChatPage() {
     const recognition = new SpeechRecognition();
     recognition.lang = 'fr-FR';
     recognition.continuous = true;
-    recognition.interimResults = false;
+    recognition.interimResults = true; // Active les résultats intermédiaires
 
     recognitionRef.current = recognition;
 
@@ -143,12 +167,38 @@ export default function ChatPage() {
       setIsListening(false);
       stopTimer();
       stopAudioVisualization();
+      setInterimTranscript('');
     };
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[event.results.length - 1][0].transcript;
-      // IMPORTANT: Append au lieu de remplacer
-      setInput(prev => prev ? prev + ' ' + transcript : transcript);
+      let interim = '';
+      let final = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          final += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+
+      // Affiche le texte intermédiaire pendant la dictée
+      setInterimTranscript(interim);
+
+      // Quand un segment est finalisé, on l'ajoute avec ponctuation
+      if (final) {
+        const punctuatedText = addSmartPunctuation(final);
+        setInput(prev => {
+          if (!prev.trim()) return punctuatedText;
+          // Si le texte précédent se termine par une ponctuation, ajoute un espace
+          const lastChar = prev.trim().charAt(prev.trim().length - 1);
+          if (['.', '!', '?'].includes(lastChar)) {
+            return prev.trim() + ' ' + punctuatedText;
+          }
+          return prev.trim() + ' ' + punctuatedText.charAt(0).toLowerCase() + punctuatedText.slice(1);
+        });
+      }
     };
 
     recognition.onerror = (event: any) => {
@@ -156,6 +206,7 @@ export default function ChatPage() {
       setIsListening(false);
       stopTimer();
       stopAudioVisualization();
+      setInterimTranscript('');
     };
 
     recognition.start();
@@ -169,6 +220,7 @@ export default function ChatPage() {
     setIsListening(false);
     stopTimer();
     stopAudioVisualization();
+    setInterimTranscript('');
   };
 
   const toggleVoiceRecognition = () => {
@@ -335,80 +387,81 @@ export default function ChatPage() {
         )}
       </div>
 
-      {/* Recording Overlay - Style ChatGPT */}
-      {isListening && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-11/12 text-center">
-            {/* Timer */}
-            <div className="text-4xl font-bold text-[#1E3A8A] mb-6">
-              {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
-            </div>
-
-            {/* Audio Visualization */}
-            <div className="flex items-center justify-center gap-1 h-24 mb-6">
-              {[...Array(40)].map((_, i) => {
-                const height = Math.max(10, audioLevel * 100 * (0.5 + Math.random() * 0.5));
-                return (
-                  <div
-                    key={i}
-                    className="w-1 bg-[#1E3A8A] rounded-full transition-all duration-75"
-                    style={{
-                      height: `${height}%`,
-                      opacity: 0.3 + audioLevel * 0.7
-                    }}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Texte en cours */}
-            {input && (
-              <div className="text-sm text-gray-600 mb-6 max-h-24 overflow-y-auto">
-                {input}
+      <div className="bg-white border-t border-[#E2E8F0] p-3 sm:p-4 flex-shrink-0 safe-bottom">
+        <div className="flex flex-col gap-2 max-w-4xl mx-auto">
+          {/* Visualisation audio + timer (visible uniquement en enregistrement) */}
+          {isListening && (
+            <div className="flex items-center gap-3 px-3 py-2 bg-[#F8FAFC] rounded-2xl">
+              {/* Timer */}
+              <div className="text-sm font-semibold text-[#1E3A8A] min-w-[40px]">
+                {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
               </div>
-            )}
 
-            {/* Bouton Stop */}
+              {/* Visualisation audio inline */}
+              <div className="flex-1 flex items-center justify-center gap-0.5 h-8">
+                {[...Array(30)].map((_, i) => {
+                  const height = Math.max(4, audioLevel * 100 * (0.3 + Math.random() * 0.7));
+                  return (
+                    <div
+                      key={i}
+                      className="w-0.5 bg-[#1E3A8A] rounded-full transition-all duration-75"
+                      style={{
+                        height: `${height}%`,
+                        opacity: 0.3 + audioLevel * 0.7
+                      }}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Bouton stop */}
+              <button
+                onClick={stopVoiceRecognition}
+                className="text-xs text-red-500 font-semibold hover:text-red-600 transition-colors px-2"
+              >
+                Stop
+              </button>
+            </div>
+          )}
+
+          {/* Barre de saisie */}
+          <div className="flex items-center gap-2">
             <button
-              onClick={stopVoiceRecognition}
-              className="bg-red-500 text-white px-8 py-3 rounded-full font-semibold hover:bg-red-600 transition-colors"
+              onClick={toggleVoiceRecognition}
+              disabled={loading}
+              className={'p-2.5 sm:p-3 rounded-full transition-colors flex-shrink-0 ' + (
+                isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#F8FAFC] text-[#1E3A8A] hover:bg-[#E2E8F0]'
+              )}
             >
-              Arrêter l'enregistrement
+              <FaMicrophone className="text-base sm:text-lg" />
+            </button>
+
+            <div className="flex-1 relative">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input + (interimTranscript ? ' ' + interimTranscript : '')}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={isListening ? 'Parlez maintenant...' : 'Votre message...'}
+                disabled={loading || isListening}
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border-none rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B] text-sm sm:text-base"
+              />
+              {interimTranscript && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] text-sm italic pointer-events-none">
+                  ...
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={handleSend}
+              disabled={loading || !input.trim()}
+              className="p-2.5 sm:p-3 bg-[#1E3A8A] text-white rounded-full hover:bg-[#1E40AF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            >
+              <FaPaperPlane className="text-base sm:text-lg" />
             </button>
           </div>
-        </div>
-      )}
-
-      <div className="bg-white border-t border-[#E2E8F0] p-3 sm:p-4 flex-shrink-0 safe-bottom">
-        <div className="flex items-center gap-2 max-w-4xl mx-auto">
-          <button
-            onClick={toggleVoiceRecognition}
-            disabled={loading}
-            className={'p-2.5 sm:p-3 rounded-full transition-colors flex-shrink-0 ' + (
-              isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#F8FAFC] text-[#1E3A8A] hover:bg-[#E2E8F0]'
-            )}
-          >
-            <FaMicrophone className="text-base sm:text-lg" />
-          </button>
-
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Votre message..."
-            disabled={loading}
-            className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border-none rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B] text-sm sm:text-base"
-          />
-
-          <button
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-            className="p-2.5 sm:p-3 bg-[#1E3A8A] text-white rounded-full hover:bg-[#1E40AF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-          >
-            <FaPaperPlane className="text-base sm:text-lg" />
-          </button>
         </div>
       </div>
     </div>
