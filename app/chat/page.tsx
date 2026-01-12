@@ -172,48 +172,48 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="h-screen flex flex-col bg-[#F8FAFC] fixed inset-0 overflow-hidden">
       <Drawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <header className="bg-white shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
+      <header className="bg-white shadow-sm flex-shrink-0">
+        <div className="flex items-center justify-between px-3 sm:px-4 py-3">
           <button
             onClick={() => setDrawerOpen(true)}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <FaBars className="text-xl text-[#1E3A8A]" />
+            <FaBars className="text-lg sm:text-xl text-[#1E3A8A]" />
           </button>
-          <h1 className="text-xl font-semibold text-[#1E3A8A]">PRUDHOMME</h1>
-          <div className="w-10"></div>
+          <h1 className="text-lg sm:text-xl font-semibold text-[#1E3A8A]">PRUDHOMME</h1>
+          <div className="w-8 sm:w-10"></div>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {messages.length === 0 && !typingMessage ? (
-          <div className="h-full flex items-center justify-center px-10">
-            <p className="text-center text-5xl text-[#1E3A8A] font-light opacity-25 leading-tight">
+          <div className="h-full flex items-center justify-center px-4 sm:px-10">
+            <p className="text-center text-2xl sm:text-4xl md:text-5xl text-[#1E3A8A] font-light opacity-25 leading-tight">
               Pouvez-vous me décrire brièvement votre problème juridique ?
             </p>
           </div>
         ) : (
-          <div className="p-4 space-y-4 pb-32">
+          <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 pb-4">
             {messages.map((msg, i) => (
               <div key={i} className={'flex ' + (msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start')}>
-                <div className={'max-w-[75%] px-4 py-3 ' + (
+                <div className={'max-w-[85%] sm:max-w-[75%] px-3 sm:px-4 py-2.5 sm:py-3 ' + (
                   msg.role === 'user'
                     ? 'bg-[#1E3A8A] text-white rounded-[18px]'
                     : msg.role === 'system'
                     ? 'bg-[#10B981] text-white rounded-[18px] text-center'
                     : 'bg-transparent text-[#1E3A8A] rounded-[18px]'
                 )} style={{ lineHeight: 1.4 }}>
-                  <p className="whitespace-pre-wrap text-[15px]">{msg.content}</p>
+                  <p className="whitespace-pre-wrap text-sm sm:text-[15px]">{msg.content}</p>
                 </div>
               </div>
             ))}
             {typingMessage && (
               <div className="flex justify-start">
-                <div className="max-w-[75%] px-4 py-3 bg-transparent text-[#1E3A8A] rounded-[18px]" style={{ lineHeight: 1.4 }}>
-                  <p className="whitespace-pre-wrap text-[15px]">{typingMessage}</p>
+                <div className="max-w-[85%] sm:max-w-[75%] px-3 sm:px-4 py-2.5 sm:py-3 bg-transparent text-[#1E3A8A] rounded-[18px]" style={{ lineHeight: 1.4 }}>
+                  <p className="whitespace-pre-wrap text-sm sm:text-[15px]">{typingMessage}</p>
                 </div>
               </div>
             )}
@@ -222,7 +222,7 @@ export default function ChatPage() {
         )}
 
         {loading && !typingMessage && (
-          <div className="px-4 pb-4">
+          <div className="px-3 sm:px-4 pb-4">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-[#1E3A8A] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
               <div className="w-2 h-2 bg-[#1E3A8A] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -232,16 +232,16 @@ export default function ChatPage() {
         )}
       </div>
 
-      <div className="bg-white border-t border-[#E2E8F0] p-4">
+      <div className="bg-white border-t border-[#E2E8F0] p-3 sm:p-4 flex-shrink-0 safe-bottom">
         <div className="flex items-center gap-2 max-w-4xl mx-auto">
           <button
             onClick={startVoiceRecognition}
             disabled={loading || isListening}
-            className={'p-3 rounded-full transition-colors ' + (
+            className={'p-2.5 sm:p-3 rounded-full transition-colors flex-shrink-0 ' + (
               isListening ? 'bg-red-500 text-white' : 'bg-[#F8FAFC] text-[#1E3A8A] hover:bg-[#E2E8F0]'
             )}
           >
-            <FaMicrophone className="text-lg" />
+            <FaMicrophone className="text-base sm:text-lg" />
           </button>
 
           <input
@@ -252,15 +252,15 @@ export default function ChatPage() {
             onKeyPress={handleKeyPress}
             placeholder="Votre message..."
             disabled={loading}
-            className="flex-1 px-4 py-3 bg-[#F8FAFC] border-none rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B]"
+            className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border-none rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B] text-sm sm:text-base"
           />
 
           <button
             onClick={handleSend}
             disabled={loading || !input.trim()}
-            className="p-3 bg-[#1E3A8A] text-white rounded-full hover:bg-[#1E40AF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2.5 sm:p-3 bg-[#1E3A8A] text-white rounded-full hover:bg-[#1E40AF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
           >
-            <FaPaperPlane className="text-lg" />
+            <FaPaperPlane className="text-base sm:text-lg" />
           </button>
         </div>
       </div>
