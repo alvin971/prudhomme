@@ -195,12 +195,37 @@ export default function ChatPage() {
     }
   };
 
+  const addPunctuation = (text: string): string => {
+    if (!text.trim()) return text;
+
+    let result = text.trim();
+
+    // Première lettre en majuscule
+    result = result.charAt(0).toUpperCase() + result.slice(1);
+
+    // Ajoute un point à la fin si pas de ponctuation
+    const lastChar = result.charAt(result.length - 1);
+    if (!['.', '!', '?', ',', ';'].includes(lastChar)) {
+      result += '.';
+    }
+
+    // Majuscule après ponctuation forte
+    result = result.replace(/([.!?])\s+([a-z])/g, (match, punct, letter) => punct + ' ' + letter.toUpperCase());
+
+    return result;
+  };
+
   const stopRecording = () => {
     console.log('Arrêt enregistrement, texte accumulé:', accumulatedText);
 
+    // Arrêter immédiatement la reconnaissance
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
+      try {
+        recognitionRef.current.abort(); // Plus rapide que stop()
+        recognitionRef.current = null;
+      } catch (e) {
+        console.log('Erreur arrêt recognition:', e);
+      }
     }
 
     if (streamRef.current) {
@@ -208,24 +233,29 @@ export default function ChatPage() {
       streamRef.current = null;
     }
 
-    // Ajouter le texte accumulé à l'input
+    // Arrêter immédiatement l'état
+    setIsListening(false);
+    stopTimer();
+    stopAudioVisualization();
+
+    // Ajouter le texte accumulé avec ponctuation
     if (accumulatedText.trim()) {
+      const punctuatedText = addPunctuation(accumulatedText.trim());
       setInput(prev => {
-        const newInput = prev.trim() ? prev.trim() + ' ' + accumulatedText.trim() : accumulatedText.trim();
-        console.log('Nouvel input:', newInput);
+        const newInput = prev.trim() ? prev.trim() + ' ' + punctuatedText : punctuatedText;
+        console.log('Nouvel input avec ponctuation:', newInput);
         return newInput;
       });
     } else {
       console.log('Aucun texte à ajouter');
     }
     setAccumulatedText('');
-
-    setIsListening(false);
-    stopTimer();
-    stopAudioVisualization();
   };
 
   const toggleRecording = () => {
+    // Empêcher les clics rapides pendant la transition
+    if (loading) return;
+
     if (isListening) {
       stopRecording();
     } else {
