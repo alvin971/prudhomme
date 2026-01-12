@@ -29,12 +29,13 @@ export default function ChatPage() {
   const [audioLevel, setAudioLevel] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [interimTranscript, setInterimTranscript] = useState('');
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -53,41 +54,15 @@ export default function ChatPage() {
     return text;
   };
 
-  // Ajoute ponctuation intelligente au texte (comme ChatGPT)
-  const addSmartPunctuation = (text: string): string => {
-    if (!text.trim()) return text;
-
-    let result = text.trim();
-
-    // Première lettre en majuscule
-    result = result.charAt(0).toUpperCase() + result.slice(1);
-
-    // Ajoute un point à la fin si pas de ponctuation
-    const lastChar = result.charAt(result.length - 1);
-    if (!['.', '!', '?', ',', ';'].includes(lastChar)) {
-      result += '.';
-    }
-
-    // Majuscule après point
-    result = result.replace(/\.\s+([a-z])/g, (match, letter) => '. ' + letter.toUpperCase());
-    result = result.replace(/\?\s+([a-z])/g, (match, letter) => '? ' + letter.toUpperCase());
-    result = result.replace(/\!\s+([a-z])/g, (match, letter) => '! ' + letter.toUpperCase());
-
-    return result;
-  };
-
-
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopVoiceRecognition();
+      stopRecording();
     };
   }, []);
 
-  const visualizeAudio = async () => {
+  const visualizeAudio = (stream: MediaStream) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const analyser = audioContext.createAnalyser();
       const microphone = audioContext.createMediaStreamSource(stream);
@@ -105,14 +80,14 @@ export default function ChatPage() {
         if (analyserRef.current) {
           analyserRef.current.getByteFrequencyData(dataArray);
           const average = dataArray.reduce((a, b) => a + b) / bufferLength;
-          setAudioLevel(average / 255); // Normalize to 0-1
+          setAudioLevel(average / 255);
           animationFrameRef.current = requestAnimationFrame(updateLevel);
         }
       };
 
       updateLevel();
     } catch (error) {
-      console.error('Error accessing microphone:', error);
+      console.error('Error visualizing audio:', error);
     }
   };
 
@@ -143,91 +118,98 @@ export default function ChatPage() {
     setAudioLevel(0);
   };
 
-  const startVoiceRecognition = () => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      alert('La reconnaissance vocale n\'est pas supportée par votre navigateur');
-      return;
-    }
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
 
-    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'fr-FR';
-    recognition.continuous = true;
-    recognition.interimResults = true; // Active les résultats intermédiaires
+      // Visualisation audio
+      visualizeAudio(stream);
 
-    recognitionRef.current = recognition;
-
-    recognition.onstart = () => {
-      setIsListening(true);
+      // Démarrer le timer
       startTimer();
-      visualizeAudio();
-    };
 
-    recognition.onend = () => {
-      setIsListening(false);
-      stopTimer();
-      stopAudioVisualization();
-      setInterimTranscript('');
-    };
+      // Créer MediaRecorder
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm'
+      });
 
-    recognition.onresult = (event: any) => {
-      let interim = '';
-      let final = '';
+      audioChunksRef.current = [];
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          final += transcript;
-        } else {
-          interim += transcript;
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
         }
-      }
+      };
 
-      // Affiche le texte intermédiaire pendant la dictée
-      setInterimTranscript(interim);
+      mediaRecorder.onstop = async () => {
+        // Créer le blob audio
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
 
-      // Quand un segment est finalisé, on l'ajoute avec ponctuation
-      if (final) {
-        const punctuatedText = addSmartPunctuation(final);
-        setInput(prev => {
-          if (!prev.trim()) return punctuatedText;
-          // Si le texte précédent se termine par une ponctuation, ajoute un espace
-          const lastChar = prev.trim().charAt(prev.trim().length - 1);
-          if (['.', '!', '?'].includes(lastChar)) {
-            return prev.trim() + ' ' + punctuatedText;
+        // Envoyer à Whisper pour transcription
+        try {
+          setLoading(true);
+          const formData = new FormData();
+          formData.append('audio', audioBlob, 'recording.webm');
+
+          const response = await fetch('/api/transcribe', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const transcribedText = data.text;
+
+            // Ajouter le texte transcrit avec ponctuation (Whisper gère déjà la ponctuation)
+            setInput(prev => {
+              if (!prev.trim()) return transcribedText;
+              return prev.trim() + ' ' + transcribedText;
+            });
+          } else {
+            alert('Erreur lors de la transcription');
           }
-          return prev.trim() + ' ' + punctuatedText.charAt(0).toLowerCase() + punctuatedText.slice(1);
-        });
-      }
-    };
+        } catch (error) {
+          console.error('Erreur transcription:', error);
+          alert('Erreur lors de la transcription');
+        } finally {
+          setLoading(false);
+        }
 
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-      setIsListening(false);
-      stopTimer();
-      stopAudioVisualization();
-      setInterimTranscript('');
-    };
+        // Nettoyer
+        audioChunksRef.current = [];
+      };
 
-    recognition.start();
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsListening(true);
+
+    } catch (error) {
+      console.error('Erreur accès microphone:', error);
+      alert('Impossible d\'accéder au microphone');
+    }
   };
 
-  const stopVoiceRecognition = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
     }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
     setIsListening(false);
     stopTimer();
     stopAudioVisualization();
-    setInterimTranscript('');
   };
 
-  const toggleVoiceRecognition = () => {
+  const toggleRecording = () => {
     if (isListening) {
-      stopVoiceRecognition();
+      stopRecording();
     } else {
-      startVoiceRecognition();
+      startRecording();
     }
   };
 
@@ -414,20 +396,17 @@ export default function ChatPage() {
                 })}
               </div>
 
-              {/* Bouton stop */}
-              <button
-                onClick={stopVoiceRecognition}
-                className="text-xs text-red-500 font-semibold hover:text-red-600 transition-colors px-2"
-              >
-                Stop
-              </button>
+              {/* Texte d'instruction */}
+              <span className="text-xs text-[#64748B]">
+                Enregistrement en cours...
+              </span>
             </div>
           )}
 
           {/* Barre de saisie */}
           <div className="flex items-center gap-2">
             <button
-              onClick={toggleVoiceRecognition}
+              onClick={toggleRecording}
               disabled={loading}
               className={'p-2.5 sm:p-3 rounded-full transition-colors flex-shrink-0 ' + (
                 isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#F8FAFC] text-[#1E3A8A] hover:bg-[#E2E8F0]'
@@ -436,23 +415,16 @@ export default function ChatPage() {
               <FaMicrophone className="text-base sm:text-lg" />
             </button>
 
-            <div className="flex-1 relative">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input + (interimTranscript ? ' ' + interimTranscript : '')}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={isListening ? 'Parlez maintenant...' : 'Votre message...'}
-                disabled={loading || isListening}
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border-none rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B] text-sm sm:text-base"
-              />
-              {interimTranscript && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] text-sm italic pointer-events-none">
-                  ...
-                </span>
-              )}
-            </div>
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={isListening ? 'Enregistrement en cours...' : 'Votre message...'}
+              disabled={loading || isListening}
+              className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border-none rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B] text-sm sm:text-base"
+            />
 
             <button
               onClick={handleSend}
