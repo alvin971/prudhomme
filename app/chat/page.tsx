@@ -172,10 +172,10 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="flex flex-col bg-[#F8FAFC]" style={{ height: '100dvh', minHeight: '-webkit-fill-available' }}>
       <Drawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <header className="bg-white shadow-sm flex-shrink-0">
+      <header className="bg-white shadow-sm flex-shrink-0 sticky top-0 z-10">
         <div className="flex items-center justify-between px-3 sm:px-4 py-3">
           <button
             onClick={() => setDrawerOpen(true)}
@@ -188,7 +188,7 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
         {messages.length === 0 && !typingMessage ? (
           <div className="h-full flex items-center justify-center px-4 sm:px-10">
             <p className="text-center text-2xl sm:text-4xl md:text-5xl text-[#1E3A8A] font-light opacity-25 leading-tight">
