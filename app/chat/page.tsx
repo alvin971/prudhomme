@@ -172,7 +172,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[#F8FAFC] fixed inset-0 overflow-hidden">
+    <div className="min-h-screen h-screen flex flex-col bg-[#F8FAFC]">
       <Drawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <header className="bg-white shadow-sm flex-shrink-0">
