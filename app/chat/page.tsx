@@ -29,13 +29,13 @@ export default function ChatPage() {
   const [audioLevel, setAudioLevel] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  const recognitionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const [accumulatedText, setAccumulatedText] = useState('');
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -61,8 +61,11 @@ export default function ChatPage() {
     };
   }, []);
 
-  const visualizeAudio = (stream: MediaStream) => {
+  const visualizeAudio = async () => {
     try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const analyser = audioContext.createAnalyser();
       const microphone = audioContext.createMediaStreamSource(stream);
@@ -86,8 +89,10 @@ export default function ChatPage() {
       };
 
       updateLevel();
+      return stream;
     } catch (error) {
       console.error('Error visualizing audio:', error);
+      throw error;
     }
   };
 
@@ -119,86 +124,89 @@ export default function ChatPage() {
   };
 
   const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      alert('La reconnaissance vocale n\'est pas supportée par votre navigateur');
+      return;
+    }
 
-      // Visualisation audio
-      visualizeAudio(stream);
+    try {
+      // Démarrer la visualisation audio
+      await visualizeAudio();
 
       // Démarrer le timer
       startTimer();
 
-      // Créer MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm'
-      });
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'fr-FR';
+      recognition.continuous = true;
+      recognition.interimResults = true;
 
-      audioChunksRef.current = [];
+      recognitionRef.current = recognition;
+      setAccumulatedText('');
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
+      recognition.onstart = () => {
+        setIsListening(true);
+        console.log('Reconnaissance vocale démarrée');
       };
 
-      mediaRecorder.onstop = async () => {
-        // Créer le blob audio
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      recognition.onresult = (event: any) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
 
-        // Envoyer à Whisper pour transcription
-        try {
-          setLoading(true);
-          const formData = new FormData();
-          formData.append('audio', audioBlob, 'recording.webm');
-
-          const response = await fetch('/api/transcribe', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            const transcribedText = data.text;
-
-            // Ajouter le texte transcrit avec ponctuation (Whisper gère déjà la ponctuation)
-            setInput(prev => {
-              if (!prev.trim()) return transcribedText;
-              return prev.trim() + ' ' + transcribedText;
-            });
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
           } else {
-            alert('Erreur lors de la transcription');
+            interimTranscript += transcript;
           }
-        } catch (error) {
-          console.error('Erreur transcription:', error);
-          alert('Erreur lors de la transcription');
-        } finally {
-          setLoading(false);
         }
 
-        // Nettoyer
-        audioChunksRef.current = [];
+        // Ajouter le texte final au texte accumulé
+        if (finalTranscript) {
+          setAccumulatedText(prev => prev + finalTranscript);
+        }
       };
 
-      mediaRecorder.start();
-      mediaRecorderRef.current = mediaRecorder;
-      setIsListening(true);
+      recognition.onerror = (event: any) => {
+        console.error('Erreur reconnaissance vocale:', event.error);
+        setIsListening(false);
+        stopTimer();
+        stopAudioVisualization();
+      };
+
+      recognition.onend = () => {
+        console.log('Reconnaissance vocale terminée');
+      };
+
+      recognition.start();
 
     } catch (error) {
-      console.error('Erreur accès microphone:', error);
-      alert('Impossible d\'accéder au microphone');
+      console.error('Erreur démarrage reconnaissance:', error);
+      alert('Impossible d\'accéder au microphone: ' + (error as Error).message);
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
     }
 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+
+    // Ajouter le texte accumulé à l'input
+    if (accumulatedText.trim()) {
+      setInput(prev => {
+        if (!prev.trim()) return accumulatedText.trim();
+        return prev.trim() + ' ' + accumulatedText.trim();
+      });
+    }
+    setAccumulatedText('');
 
     setIsListening(false);
     stopTimer();
