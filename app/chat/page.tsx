@@ -163,9 +163,16 @@ export default function ChatPage() {
           }
         }
 
+        console.log('Interim:', interimTranscript);
+        console.log('Final:', finalTranscript);
+
         // Ajouter le texte final au texte accumulé
         if (finalTranscript) {
-          setAccumulatedText(prev => prev + finalTranscript);
+          setAccumulatedText(prev => {
+            const newText = prev + finalTranscript;
+            console.log('Texte accumulé:', newText);
+            return newText;
+          });
         }
       };
 
@@ -189,6 +196,8 @@ export default function ChatPage() {
   };
 
   const stopRecording = () => {
+    console.log('Arrêt enregistrement, texte accumulé:', accumulatedText);
+
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       recognitionRef.current = null;
@@ -202,9 +211,12 @@ export default function ChatPage() {
     // Ajouter le texte accumulé à l'input
     if (accumulatedText.trim()) {
       setInput(prev => {
-        if (!prev.trim()) return accumulatedText.trim();
-        return prev.trim() + ' ' + accumulatedText.trim();
+        const newInput = prev.trim() ? prev.trim() + ' ' + accumulatedText.trim() : accumulatedText.trim();
+        console.log('Nouvel input:', newInput);
+        return newInput;
       });
+    } else {
+      console.log('Aucun texte à ajouter');
     }
     setAccumulatedText('');
 
@@ -426,10 +438,10 @@ export default function ChatPage() {
             <input
               ref={inputRef}
               type="text"
-              value={input}
+              value={isListening ? input + accumulatedText : input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={isListening ? 'Enregistrement en cours...' : 'Votre message...'}
+              placeholder={isListening ? 'Parlez maintenant...' : 'Votre message...'}
               disabled={loading || isListening}
               className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border-none rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B] text-sm sm:text-base"
             />
