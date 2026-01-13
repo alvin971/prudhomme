@@ -28,7 +28,7 @@ export default function ChatPage() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -252,14 +252,19 @@ export default function ChatPage() {
     setAccumulatedText('');
   };
 
-  const toggleRecording = () => {
-    // Empêcher les clics rapides pendant la transition
+  const toggleRecording = async () => {
+    // Empêcher les clics multiples
     if (loading) return;
 
     if (isListening) {
+      // Arrêter immédiatement sans attendre
       stopRecording();
+
+      // Bloquer temporairement pour éviter les clics multiples
+      setLoading(true);
+      setTimeout(() => setLoading(false), 500);
     } else {
-      startRecording();
+      await startRecording();
     }
   };
 
@@ -351,7 +356,7 @@ export default function ChatPage() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -465,15 +470,26 @@ export default function ChatPage() {
               <FaMicrophone className="text-base sm:text-lg" />
             </button>
 
-            <input
+            <textarea
               ref={inputRef}
-              type="text"
               value={isListening ? input + accumulatedText : input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={isListening ? 'Parlez maintenant...' : 'Votre message...'}
               disabled={loading || isListening}
-              className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border-none rounded-full focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B] text-sm sm:text-base"
+              rows={1}
+              className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border-none rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B] text-sm sm:text-base resize-none overflow-y-auto max-h-[144px]"
+              style={{
+                minHeight: '44px',
+                lineHeight: '1.5',
+                scrollbarWidth: 'thin'
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = '44px';
+                const newHeight = Math.min(target.scrollHeight, 144); // 6 lignes max (24px * 6 = 144px)
+                target.style.height = newHeight + 'px';
+              }}
             />
 
             <button

@@ -45,6 +45,11 @@ body {
   }
 }
 
+/* Style pour textarea auto-resizable */
+textarea {
+  field-sizing: content;
+}
+
 /* Améliore le scroll sur mobile */
 * {
   -webkit-overflow-scrolling: touch;
