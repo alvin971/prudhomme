@@ -37,7 +37,6 @@ export default function ChatPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const [accumulatedText, setAccumulatedText] = useState('');
   const accumulatedTextRef = useRef('');
-  const isStoppingRef = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -226,13 +225,6 @@ export default function ChatPage() {
   };
 
   const stopRecording = () => {
-    // Empêcher les doubles clics
-    if (isStoppingRef.current) {
-      console.log('Déjà en cours d\'arrêt, ignorer');
-      return;
-    }
-
-    isStoppingRef.current = true;
     console.log('Validation enregistrement, texte accumulé:', accumulatedTextRef.current);
 
     // Arrêter la reconnaissance
@@ -266,11 +258,6 @@ export default function ChatPage() {
     }
     setAccumulatedText('');
     accumulatedTextRef.current = '';
-
-    // Réinitialiser le flag après un court délai
-    setTimeout(() => {
-      isStoppingRef.current = false;
-    }, 300);
   };
 
   const cancelRecording = () => {
@@ -539,12 +526,8 @@ export default function ChatPage() {
           {/* Pendant l'enregistrement : bouton ✓ (valider), Hors enregistrement : bouton envoyer */}
           {isListening ? (
             <button
-              onMouseDown={(e) => {
-                e.preventDefault();
-                stopRecording();
-              }}
-              onTouchStart={(e) => {
-                e.preventDefault();
+              onClick={(e) => {
+                e.stopPropagation();
                 stopRecording();
               }}
               disabled={loading}
