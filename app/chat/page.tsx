@@ -224,7 +224,7 @@ export default function ChatPage() {
     return result;
   };
 
-  const stopRecording = () => {
+  const stopRecording = (shouldSend: boolean = false) => {
     console.log('Arrêt enregistrement, texte accumulé:', accumulatedTextRef.current);
 
     // Arrêter immédiatement la reconnaissance
@@ -250,11 +250,46 @@ export default function ChatPage() {
     // Ajouter le texte accumulé avec ponctuation
     if (accumulatedTextRef.current.trim()) {
       const punctuatedText = addPunctuation(accumulatedTextRef.current.trim());
-      setInput(prev => {
-        const newInput = prev.trim() ? prev.trim() + ' ' + punctuatedText : punctuatedText;
-        console.log('Nouvel input avec ponctuation:', newInput);
-        return newInput;
-      });
+      const newInput = input.trim() ? input.trim() + ' ' + punctuatedText : punctuatedText;
+      console.log('Nouvel input avec ponctuation:', newInput);
+      setInput(newInput);
+
+      // Si on doit envoyer, envoyer directement avec le nouveau texte
+      if (shouldSend) {
+        setTimeout(() => {
+          // Envoyer le message avec le texte transcrit
+          const userMessage: Message = {
+            role: 'user',
+            content: newInput,
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, userMessage]);
+          setInput('');
+          setLoading(true);
+
+          const conversationMessages = [...messages, userMessage];
+          const aiMessages = conversationMessages
+            .filter(m => m.role !== 'system')
+            .map(m => ({
+              role: m.role as 'user' | 'assistant',
+              content: m.content
+            }));
+
+          sendMessageToAI(aiMessages).then(async response => {
+            await typewriterEffect(response);
+            setMessages(prev => [...prev, {
+              role: 'assistant' as const,
+              content: response,
+              timestamp: new Date()
+            }]);
+            setTypingMessage('');
+            setLoading(false);
+          }).catch(error => {
+            console.error('Erreur:', error);
+            setLoading(false);
+          });
+        }, 100);
+      }
     } else {
       console.log('Aucun texte à ajouter');
     }
@@ -267,8 +302,8 @@ export default function ChatPage() {
     if (loading) return;
 
     if (isListening) {
-      // Arrêter immédiatement sans attendre
-      stopRecording();
+      // Arrêter immédiatement sans envoyer
+      stopRecording(false);
 
       // Bloquer temporairement pour éviter les clics multiples
       setLoading(true);
@@ -435,18 +470,23 @@ export default function ChatPage() {
       </div>
 
       <div className="bg-white border-t border-[#E2E8F0] p-3 sm:p-4 flex-shrink-0 safe-bottom">
-        <div className="flex flex-col gap-2 max-w-4xl mx-auto">
-          {/* Visualisation audio + timer (visible uniquement en enregistrement) */}
-          {isListening && (
-            <div className="flex items-center gap-3 px-3 py-2 bg-[#F8FAFC] rounded-2xl">
-              {/* Timer */}
-              <div className="text-sm font-semibold text-[#1E3A8A] min-w-[40px]">
-                {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
-              </div>
+        <div className="flex items-center gap-2 max-w-4xl mx-auto">
+          <button
+            onClick={toggleRecording}
+            disabled={loading}
+            className={'p-2.5 sm:p-3 rounded-full transition-colors flex-shrink-0 ' + (
+              isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#F8FAFC] text-[#1E3A8A] hover:bg-[#E2E8F0]'
+            )}
+          >
+            <FaMicrophone className="text-base sm:text-lg" />
+          </button>
 
-              {/* Visualisation audio inline */}
+          {/* Pendant l'enregistrement : afficher le graphe audio */}
+          {isListening ? (
+            <div className="flex-1 flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] rounded-3xl">
+              {/* Visualisation audio */}
               <div className="flex-1 flex items-center justify-center gap-0.5 h-8">
-                {[...Array(30)].map((_, i) => {
+                {[...Array(40)].map((_, i) => {
                   const height = Math.max(4, audioLevel * 100 * (0.3 + Math.random() * 0.7));
                   return (
                     <div
@@ -461,37 +501,20 @@ export default function ChatPage() {
                 })}
               </div>
 
-              {/* Texte d'instruction */}
-              <span className="text-xs text-[#64748B]">
-                Enregistrement en cours...
-              </span>
+              {/* Timer */}
+              <div className="text-sm font-semibold text-[#1E3A8A] min-w-[45px] text-right">
+                {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+              </div>
             </div>
-          )}
-
-          {/* Barre de saisie */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleRecording}
-              disabled={loading}
-              className={'p-2.5 sm:p-3 rounded-full transition-colors flex-shrink-0 ' + (
-                isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#F8FAFC] text-[#1E3A8A] hover:bg-[#E2E8F0]'
-              )}
-            >
-              <FaMicrophone className="text-base sm:text-lg" />
-            </button>
-
+          ) : (
+            /* Hors enregistrement : afficher le textarea */
             <textarea
               ref={inputRef}
-              value={!isListening ? input : undefined}
-              defaultValue={isListening ? input : undefined}
-              onChange={(e) => {
-                if (!isListening) {
-                  setInput(e.target.value);
-                }
-              }}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={isListening ? 'Parlez maintenant...' : 'Votre message...'}
-              disabled={loading && !isListening}
+              placeholder="Votre message..."
+              disabled={loading}
               rows={1}
               className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border-none rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B] text-sm sm:text-base resize-none overflow-y-auto max-h-[144px]"
               style={{
@@ -502,19 +525,26 @@ export default function ChatPage() {
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
                 target.style.height = '44px';
-                const newHeight = Math.min(target.scrollHeight, 144); // 6 lignes max (24px * 6 = 144px)
+                const newHeight = Math.min(target.scrollHeight, 144);
                 target.style.height = newHeight + 'px';
               }}
             />
+          )}
 
-            <button
-              onClick={handleSend}
-              disabled={loading || !input.trim()}
-              className="p-2.5 sm:p-3 bg-[#1E3A8A] text-white rounded-full hover:bg-[#1E40AF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-            >
-              <FaPaperPlane className="text-base sm:text-lg" />
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              if (isListening) {
+                // Si en enregistrement, arrêter et envoyer directement
+                stopRecording(true);
+              } else {
+                handleSend();
+              }
+            }}
+            disabled={loading || (!isListening && !input.trim())}
+            className="p-2.5 sm:p-3 bg-[#1E3A8A] text-white rounded-full hover:bg-[#1E40AF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+          >
+            <FaPaperPlane className="text-base sm:text-lg" />
+          </button>
         </div>
       </div>
     </div>
