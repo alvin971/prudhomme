@@ -225,6 +225,9 @@ export default function ChatPage() {
   };
 
   const stopRecording = () => {
+    // Si déjà en train d'arrêter, ignorer
+    if (!isListening) return;
+
     console.log('Validation enregistrement, texte accumulé:', accumulatedTextRef.current);
 
     // Arrêter la reconnaissance
@@ -246,21 +249,24 @@ export default function ChatPage() {
     stopAudioVisualization();
 
     // Ajouter le texte accumulé avec ponctuation
-    if (accumulatedTextRef.current.trim()) {
-      const punctuatedText = addPunctuation(accumulatedTextRef.current.trim());
+    const textToAdd = accumulatedTextRef.current.trim();
+    console.log('Texte à ajouter:', textToAdd);
+
+    if (textToAdd) {
+      const punctuatedText = addPunctuation(textToAdd);
       const newInput = input.trim() ? input.trim() + ' ' + punctuatedText : punctuatedText;
       console.log('Nouvel input avec ponctuation:', newInput);
       setInput(newInput);
     } else {
       console.log('Aucun texte à ajouter');
     }
+
+    // Nettoyer
     setAccumulatedText('');
     accumulatedTextRef.current = '';
 
-    // Retarder le changement d'état pour que le clic soit complètement traité
-    requestAnimationFrame(() => {
-      setIsListening(false);
-    });
+    // Arrêter l'état d'écoute
+    setIsListening(false);
   };
 
   const cancelRecording = () => {
@@ -529,11 +535,9 @@ export default function ChatPage() {
           {/* Pendant l'enregistrement : bouton ✓ (valider), Hors enregistrement : bouton envoyer */}
           {isListening ? (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                stopRecording();
-              }}
+              onClick={stopRecording}
               disabled={loading}
+              type="button"
               className="p-2.5 sm:p-3 rounded-full bg-[#1E3A8A] text-white hover:bg-[#1E40AF] transition-colors flex-shrink-0"
             >
               <FaCheck className="text-base sm:text-lg" />
