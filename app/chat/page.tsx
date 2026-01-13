@@ -37,6 +37,7 @@ export default function ChatPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const [accumulatedText, setAccumulatedText] = useState('');
   const accumulatedTextRef = useRef('');
+  const interimTextRef = useRef('');
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -172,12 +173,15 @@ export default function ChatPage() {
         console.log('Interim:', interimTranscript);
         console.log('Final:', finalTranscript);
 
-        // Mettre à jour le texte accumulé (final seulement)
+        // Mettre à jour le texte accumulé (final)
         if (finalTranscript) {
           accumulatedTextRef.current += finalTranscript;
           setAccumulatedText(accumulatedTextRef.current);
-          console.log('Texte accumulé:', accumulatedTextRef.current);
+          console.log('Texte final accumulé:', accumulatedTextRef.current);
         }
+
+        // Sauvegarder aussi l'interim pour les enregistrements courts
+        interimTextRef.current = interimTranscript;
 
         // Mettre à jour directement le textarea avec le texte accumulé + interim
         if (inputRef.current) {
@@ -228,7 +232,9 @@ export default function ChatPage() {
     // Si déjà en train d'arrêter, ignorer
     if (!isListening) return;
 
-    console.log('Validation enregistrement, texte accumulé:', accumulatedTextRef.current);
+    console.log('Validation enregistrement');
+    console.log('- Texte final:', accumulatedTextRef.current);
+    console.log('- Texte interim:', interimTextRef.current);
 
     // Arrêter la reconnaissance
     if (recognitionRef.current) {
@@ -248,9 +254,16 @@ export default function ChatPage() {
     stopTimer();
     stopAudioVisualization();
 
-    // Ajouter le texte accumulé avec ponctuation
-    const textToAdd = accumulatedTextRef.current.trim();
-    console.log('Texte à ajouter:', textToAdd);
+    // Combiner le texte final + interim (pour les enregistrements courts)
+    let textToAdd = accumulatedTextRef.current.trim();
+
+    // Si pas de texte final, utiliser l'interim
+    if (!textToAdd && interimTextRef.current.trim()) {
+      textToAdd = interimTextRef.current.trim();
+      console.log('Utilisation du texte interim car pas de texte final');
+    }
+
+    console.log('Texte total à ajouter:', textToAdd);
 
     if (textToAdd) {
       const punctuatedText = addPunctuation(textToAdd);
@@ -264,6 +277,7 @@ export default function ChatPage() {
     // Nettoyer
     setAccumulatedText('');
     accumulatedTextRef.current = '';
+    interimTextRef.current = '';
 
     // Arrêter l'état d'écoute
     setIsListening(false);
@@ -536,6 +550,10 @@ export default function ChatPage() {
           {isListening ? (
             <button
               onClick={stopRecording}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                stopRecording();
+              }}
               disabled={loading}
               type="button"
               className="p-2.5 sm:p-3 rounded-full bg-[#1E3A8A] text-white hover:bg-[#1E40AF] transition-colors flex-shrink-0"
