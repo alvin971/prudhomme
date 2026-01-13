@@ -36,6 +36,7 @@ export default function ChatPage() {
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [accumulatedText, setAccumulatedText] = useState('');
+  const accumulatedTextRef = useRef('');
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -144,10 +145,15 @@ export default function ChatPage() {
 
       recognitionRef.current = recognition;
       setAccumulatedText('');
+      accumulatedTextRef.current = '';
 
       recognition.onstart = () => {
         setIsListening(true);
         console.log('Reconnaissance vocale démarrée');
+        // Initialiser le textarea avec le texte actuel
+        if (inputRef.current) {
+          inputRef.current.value = input;
+        }
       };
 
       recognition.onresult = (event: any) => {
@@ -166,13 +172,16 @@ export default function ChatPage() {
         console.log('Interim:', interimTranscript);
         console.log('Final:', finalTranscript);
 
-        // Ajouter le texte final au texte accumulé
+        // Mettre à jour le texte accumulé (final seulement)
         if (finalTranscript) {
-          setAccumulatedText(prev => {
-            const newText = prev + finalTranscript;
-            console.log('Texte accumulé:', newText);
-            return newText;
-          });
+          accumulatedTextRef.current += finalTranscript;
+          setAccumulatedText(accumulatedTextRef.current);
+          console.log('Texte accumulé:', accumulatedTextRef.current);
+        }
+
+        // Mettre à jour directement le textarea avec le texte accumulé + interim
+        if (inputRef.current) {
+          inputRef.current.value = input + accumulatedTextRef.current + interimTranscript;
         }
       };
 
@@ -216,7 +225,7 @@ export default function ChatPage() {
   };
 
   const stopRecording = () => {
-    console.log('Arrêt enregistrement, texte accumulé:', accumulatedText);
+    console.log('Arrêt enregistrement, texte accumulé:', accumulatedTextRef.current);
 
     // Arrêter immédiatement la reconnaissance
     if (recognitionRef.current) {
@@ -239,8 +248,8 @@ export default function ChatPage() {
     stopAudioVisualization();
 
     // Ajouter le texte accumulé avec ponctuation
-    if (accumulatedText.trim()) {
-      const punctuatedText = addPunctuation(accumulatedText.trim());
+    if (accumulatedTextRef.current.trim()) {
+      const punctuatedText = addPunctuation(accumulatedTextRef.current.trim());
       setInput(prev => {
         const newInput = prev.trim() ? prev.trim() + ' ' + punctuatedText : punctuatedText;
         console.log('Nouvel input avec ponctuation:', newInput);
@@ -250,6 +259,7 @@ export default function ChatPage() {
       console.log('Aucun texte à ajouter');
     }
     setAccumulatedText('');
+    accumulatedTextRef.current = '';
   };
 
   const toggleRecording = async () => {
@@ -472,7 +482,8 @@ export default function ChatPage() {
 
             <textarea
               ref={inputRef}
-              value={isListening ? input + accumulatedText : input}
+              value={!isListening ? input : undefined}
+              defaultValue={isListening ? input : undefined}
               onChange={(e) => {
                 if (!isListening) {
                   setInput(e.target.value);
@@ -480,7 +491,6 @@ export default function ChatPage() {
               }}
               onKeyPress={handleKeyPress}
               placeholder={isListening ? 'Parlez maintenant...' : 'Votre message...'}
-              readOnly={isListening}
               disabled={loading && !isListening}
               rows={1}
               className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border-none rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B] text-sm sm:text-base resize-none overflow-y-auto max-h-[144px]"
