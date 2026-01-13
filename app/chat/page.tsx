@@ -6,7 +6,7 @@ import { useDocuments } from '@/lib/contexts/DocumentsContext';
 import { sendMessageToAI, generateDocument } from '@/lib/services/anthropicService';
 import { extractDocumentType, shouldGenerateDocument } from '@/lib/utils/prompts';
 import { generatePDF } from '@/lib/services/documentService';
-import { FaMicrophone, FaPaperPlane, FaBars } from 'react-icons/fa';
+import { FaMicrophone, FaPaperPlane, FaBars, FaTimes, FaCheck } from 'react-icons/fa';
 import Drawer from '@/components/common/Drawer';
 
 interface Message {
@@ -224,13 +224,13 @@ export default function ChatPage() {
     return result;
   };
 
-  const stopRecording = (shouldSend: boolean = false) => {
-    console.log('Arrêt enregistrement, texte accumulé:', accumulatedTextRef.current);
+  const stopRecording = () => {
+    console.log('Validation enregistrement, texte accumulé:', accumulatedTextRef.current);
 
-    // Arrêter immédiatement la reconnaissance
+    // Arrêter la reconnaissance
     if (recognitionRef.current) {
       try {
-        recognitionRef.current.abort(); // Plus rapide que stop()
+        recognitionRef.current.abort();
         recognitionRef.current = null;
       } catch (e) {
         console.log('Erreur arrêt recognition:', e);
@@ -242,7 +242,7 @@ export default function ChatPage() {
       streamRef.current = null;
     }
 
-    // Arrêter immédiatement l'état
+    // Arrêter l'état
     setIsListening(false);
     stopTimer();
     stopAudioVisualization();
@@ -253,46 +253,35 @@ export default function ChatPage() {
       const newInput = input.trim() ? input.trim() + ' ' + punctuatedText : punctuatedText;
       console.log('Nouvel input avec ponctuation:', newInput);
       setInput(newInput);
-
-      // Si on doit envoyer, envoyer directement avec le nouveau texte
-      if (shouldSend) {
-        setTimeout(() => {
-          // Envoyer le message avec le texte transcrit
-          const userMessage: Message = {
-            role: 'user',
-            content: newInput,
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, userMessage]);
-          setInput('');
-          setLoading(true);
-
-          const conversationMessages = [...messages, userMessage];
-          const aiMessages = conversationMessages
-            .filter(m => m.role !== 'system')
-            .map(m => ({
-              role: m.role as 'user' | 'assistant',
-              content: m.content
-            }));
-
-          sendMessageToAI(aiMessages).then(async response => {
-            await typewriterEffect(response);
-            setMessages(prev => [...prev, {
-              role: 'assistant' as const,
-              content: response,
-              timestamp: new Date()
-            }]);
-            setTypingMessage('');
-            setLoading(false);
-          }).catch(error => {
-            console.error('Erreur:', error);
-            setLoading(false);
-          });
-        }, 100);
-      }
     } else {
       console.log('Aucun texte à ajouter');
     }
+    setAccumulatedText('');
+    accumulatedTextRef.current = '';
+  };
+
+  const cancelRecording = () => {
+    console.log('Annulation enregistrement');
+
+    // Arrêter la reconnaissance sans sauvegarder
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+        recognitionRef.current = null;
+      } catch (e) {
+        console.log('Erreur arrêt recognition:', e);
+      }
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    // Arrêter l'état sans sauvegarder le texte
+    setIsListening(false);
+    stopTimer();
+    stopAudioVisualization();
     setAccumulatedText('');
     accumulatedTextRef.current = '';
   };
@@ -301,14 +290,7 @@ export default function ChatPage() {
     // Empêcher les clics multiples
     if (loading) return;
 
-    if (isListening) {
-      // Arrêter immédiatement sans envoyer
-      stopRecording(false);
-
-      // Bloquer temporairement pour éviter les clics multiples
-      setLoading(true);
-      setTimeout(() => setLoading(false), 500);
-    } else {
+    if (!isListening) {
       await startRecording();
     }
   };
@@ -471,15 +453,25 @@ export default function ChatPage() {
 
       <div className="bg-white border-t border-[#E2E8F0] p-3 sm:p-4 flex-shrink-0 safe-bottom">
         <div className="flex items-center gap-2 max-w-4xl mx-auto">
-          <button
-            onClick={toggleRecording}
-            disabled={loading}
-            className={'p-2.5 sm:p-3 rounded-full transition-colors flex-shrink-0 ' + (
-              isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#F8FAFC] text-[#1E3A8A] hover:bg-[#E2E8F0]'
-            )}
-          >
-            <FaMicrophone className="text-base sm:text-lg" />
-          </button>
+          {/* Pendant l'enregistrement : bouton X (annuler) */}
+          {isListening ? (
+            <button
+              onClick={cancelRecording}
+              disabled={loading}
+              className="p-2.5 sm:p-3 rounded-full bg-[#F8FAFC] text-[#64748B] hover:bg-[#E2E8F0] transition-colors flex-shrink-0"
+            >
+              <FaTimes className="text-base sm:text-lg" />
+            </button>
+          ) : (
+            /* Hors enregistrement : bouton micro */
+            <button
+              onClick={toggleRecording}
+              disabled={loading}
+              className="p-2.5 sm:p-3 rounded-full bg-[#F8FAFC] text-[#1E3A8A] hover:bg-[#E2E8F0] transition-colors flex-shrink-0"
+            >
+              <FaMicrophone className="text-base sm:text-lg" />
+            </button>
+          )}
 
           {/* Pendant l'enregistrement : afficher le graphe audio */}
           {isListening ? (
@@ -531,20 +523,24 @@ export default function ChatPage() {
             />
           )}
 
-          <button
-            onClick={() => {
-              if (isListening) {
-                // Si en enregistrement, arrêter et envoyer directement
-                stopRecording(true);
-              } else {
-                handleSend();
-              }
-            }}
-            disabled={loading || (!isListening && !input.trim())}
-            className="p-2.5 sm:p-3 bg-[#1E3A8A] text-white rounded-full hover:bg-[#1E40AF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-          >
-            <FaPaperPlane className="text-base sm:text-lg" />
-          </button>
+          {/* Pendant l'enregistrement : bouton ✓ (valider), Hors enregistrement : bouton envoyer */}
+          {isListening ? (
+            <button
+              onClick={stopRecording}
+              disabled={loading}
+              className="p-2.5 sm:p-3 rounded-full bg-[#1E3A8A] text-white hover:bg-[#1E40AF] transition-colors flex-shrink-0"
+            >
+              <FaCheck className="text-base sm:text-lg" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={loading || !input.trim()}
+              className="p-2.5 sm:p-3 bg-[#1E3A8A] text-white rounded-full hover:bg-[#1E40AF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            >
+              <FaPaperPlane className="text-base sm:text-lg" />
+            </button>
+          )}
         </div>
       </div>
     </div>
