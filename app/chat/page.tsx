@@ -38,6 +38,8 @@ export default function ChatPage() {
   const [accumulatedText, setAccumulatedText] = useState('');
   const accumulatedTextRef = useRef('');
   const interimTextRef = useRef('');
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -126,85 +128,40 @@ export default function ChatPage() {
   };
 
   const startRecording = async () => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      alert('La reconnaissance vocale n\'est pas supportée par votre navigateur');
-      return;
-    }
-
     try {
       // Démarrer la visualisation audio
       await visualizeAudio();
 
       // Démarrer le timer
       startTimer();
+      setIsListening(true);
 
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'fr-FR';
-      recognition.continuous = true;
-      recognition.interimResults = true;
+      // Réinitialiser les chunks audio
+      audioChunksRef.current = [];
 
-      recognitionRef.current = recognition;
-      setAccumulatedText('');
-      accumulatedTextRef.current = '';
+      // Créer MediaRecorder pour enregistrer l'audio
+      if (streamRef.current) {
+        const mediaRecorder = new MediaRecorder(streamRef.current, {
+          mimeType: 'audio/webm'
+        });
 
-      recognition.onstart = () => {
-        setIsListening(true);
-        console.log('Reconnaissance vocale démarrée');
-        // Initialiser le textarea avec le texte actuel
-        if (inputRef.current) {
-          inputRef.current.value = input;
-        }
-      };
-
-      recognition.onresult = (event: any) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
-          } else {
-            interimTranscript += transcript;
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
           }
-        }
+        };
 
-        console.log('Interim:', interimTranscript);
-        console.log('Final:', finalTranscript);
-
-        // Mettre à jour le texte accumulé (final)
-        if (finalTranscript) {
-          accumulatedTextRef.current += finalTranscript;
-          setAccumulatedText(accumulatedTextRef.current);
-          console.log('Texte final accumulé:', accumulatedTextRef.current);
-        }
-
-        // Sauvegarder aussi l'interim pour les enregistrements courts
-        interimTextRef.current = interimTranscript;
-
-        // Mettre à jour directement le textarea avec le texte accumulé + interim
-        if (inputRef.current) {
-          inputRef.current.value = input + accumulatedTextRef.current + interimTranscript;
-        }
-      };
-
-      recognition.onerror = (event: any) => {
-        console.error('Erreur reconnaissance vocale:', event.error);
-        setIsListening(false);
-        stopTimer();
-        stopAudioVisualization();
-      };
-
-      recognition.onend = () => {
-        console.log('Reconnaissance vocale terminée');
-      };
-
-      recognition.start();
+        mediaRecorder.start();
+        mediaRecorderRef.current = mediaRecorder;
+        console.log('Enregistrement audio démarré');
+      }
 
     } catch (error) {
-      console.error('Erreur démarrage reconnaissance:', error);
+      console.error('Erreur démarrage enregistrement:', error);
       alert('Impossible d\'accéder au microphone: ' + (error as Error).message);
+      setIsListening(false);
+      stopTimer();
+      stopAudioVisualization();
     }
   };
 
@@ -228,22 +185,24 @@ export default function ChatPage() {
     return result;
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     // Si déjà en train d'arrêter, ignorer
     if (!isListening) return;
 
-    console.log('Validation enregistrement');
-    console.log('- Texte final:', accumulatedTextRef.current);
-    console.log('- Texte interim:', interimTextRef.current);
+    console.log('Validation enregistrement - Envoi à Whisper');
 
-    // Arrêter la reconnaissance
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.abort();
-        recognitionRef.current = null;
-      } catch (e) {
-        console.log('Erreur arrêt recognition:', e);
-      }
+    // Arrêter MediaRecorder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+
+      // Attendre que les données soient disponibles
+      await new Promise<void>((resolve) => {
+        if (mediaRecorderRef.current) {
+          mediaRecorderRef.current.onstop = () => resolve();
+        } else {
+          resolve();
+        }
+      });
     }
 
     if (streamRef.current) {
@@ -253,47 +212,60 @@ export default function ChatPage() {
 
     stopTimer();
     stopAudioVisualization();
+    setIsListening(false);
 
-    // Combiner le texte final + interim (pour les enregistrements courts)
-    let textToAdd = accumulatedTextRef.current.trim();
+    // Créer le fichier audio à partir des chunks
+    if (audioChunksRef.current.length > 0) {
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      console.log('Taille audio:', audioBlob.size, 'bytes');
 
-    // Si pas de texte final, utiliser l'interim
-    if (!textToAdd && interimTextRef.current.trim()) {
-      textToAdd = interimTextRef.current.trim();
-      console.log('Utilisation du texte interim car pas de texte final');
-    }
+      // Afficher un indicateur de chargement
+      setLoading(true);
 
-    console.log('Texte total à ajouter:', textToAdd);
+      try {
+        // Envoyer à Whisper API
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
 
-    if (textToAdd) {
-      const punctuatedText = addPunctuation(textToAdd);
-      const newInput = input.trim() ? input.trim() + ' ' + punctuatedText : punctuatedText;
-      console.log('Nouvel input avec ponctuation:', newInput);
-      setInput(newInput);
-    } else {
-      console.log('Aucun texte à ajouter');
+        const response = await fetch('/api/transcribe', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur transcription: ' + response.statusText);
+        }
+
+        const data = await response.json();
+        const transcribedText = data.text?.trim() || '';
+
+        console.log('Texte transcrit par Whisper:', transcribedText);
+
+        if (transcribedText) {
+          const newInput = input.trim() ? input.trim() + ' ' + transcribedText : transcribedText;
+          setInput(newInput);
+        }
+
+      } catch (error) {
+        console.error('Erreur transcription:', error);
+        alert('Erreur lors de la transcription. Vérifiez que la clé API OpenAI est configurée.');
+      } finally {
+        setLoading(false);
+      }
     }
 
     // Nettoyer
-    setAccumulatedText('');
-    accumulatedTextRef.current = '';
-    interimTextRef.current = '';
-
-    // Arrêter l'état d'écoute
-    setIsListening(false);
+    audioChunksRef.current = [];
+    mediaRecorderRef.current = null;
   };
 
   const cancelRecording = () => {
     console.log('Annulation enregistrement');
 
-    // Arrêter la reconnaissance sans sauvegarder
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.abort();
-        recognitionRef.current = null;
-      } catch (e) {
-        console.log('Erreur arrêt recognition:', e);
-      }
+    // Arrêter MediaRecorder sans sauvegarder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
     }
 
     if (streamRef.current) {
@@ -301,12 +273,13 @@ export default function ChatPage() {
       streamRef.current = null;
     }
 
-    // Arrêter l'état sans sauvegarder le texte
+    // Arrêter l'état sans sauvegarder
     setIsListening(false);
     stopTimer();
     stopAudioVisualization();
-    setAccumulatedText('');
-    accumulatedTextRef.current = '';
+
+    // Nettoyer
+    audioChunksRef.current = [];
   };
 
   const toggleRecording = async () => {
