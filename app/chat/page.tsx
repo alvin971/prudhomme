@@ -473,10 +473,15 @@ export default function ChatPage() {
             <textarea
               ref={inputRef}
               value={isListening ? input + accumulatedText : input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                if (!isListening) {
+                  setInput(e.target.value);
+                }
+              }}
               onKeyPress={handleKeyPress}
               placeholder={isListening ? 'Parlez maintenant...' : 'Votre message...'}
-              disabled={loading || isListening}
+              readOnly={isListening}
+              disabled={loading && !isListening}
               rows={1}
               className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border-none rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] text-[#0F172A] placeholder-[#64748B] text-sm sm:text-base resize-none overflow-y-auto max-h-[144px]"
               style={{
