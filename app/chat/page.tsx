@@ -539,7 +539,14 @@ export default function ChatPage() {
           {/* Pendant l'enregistrement : bouton ✓ (valider), Hors enregistrement : bouton envoyer */}
           {isListening ? (
             <button
-              onClick={stopRecording}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                stopRecording();
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                stopRecording();
+              }}
               disabled={loading}
               className="p-2.5 sm:p-3 rounded-full bg-[#1E3A8A] text-white hover:bg-[#1E40AF] transition-colors flex-shrink-0"
             >
