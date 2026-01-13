@@ -242,8 +242,6 @@ export default function ChatPage() {
       streamRef.current = null;
     }
 
-    // Arrêter l'état
-    setIsListening(false);
     stopTimer();
     stopAudioVisualization();
 
@@ -258,6 +256,11 @@ export default function ChatPage() {
     }
     setAccumulatedText('');
     accumulatedTextRef.current = '';
+
+    // Retarder le changement d'état pour que le clic soit complètement traité
+    requestAnimationFrame(() => {
+      setIsListening(false);
+    });
   };
 
   const cancelRecording = () => {
