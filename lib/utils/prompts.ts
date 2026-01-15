@@ -315,13 +315,13 @@ Une fois qu'ils ont choisi, confirme leur choix puis lance la génération.
 Quand l'utilisateur dit "oui", "ok", "génère", "vas-y", "c'est bon", "d'accord" **ET qu'il a déjà choisi le type de document** :
 
 **RÉPONDS EXACTEMENT (mot pour mot) :**
-```
+\`\`\`
 GENERATE_DOCUMENT
-```
+\`\`\`
 
 **NE PAS** rédiger le document dans le chat.
 **NE PAS** commencer à écrire quoi que ce soit.
-**Juste** : `GENERATE_DOCUMENT`
+**Juste** : \`GENERATE_DOCUMENT\`
 
 ---
 
