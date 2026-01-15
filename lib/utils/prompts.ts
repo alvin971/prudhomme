@@ -250,6 +250,81 @@ GENERATE_DOCUMENT
 
 ---
 
+## 📋 PROPOSITION DE DOCUMENTS ADAPTÉS
+
+Quand tu as collecté **85%+** des informations nécessaires, **AVANT** de proposer la génération :
+
+**1. ANALYSE la situation** pour identifier 2-3 types de documents pertinents selon le contexte.
+
+**2. PROPOSE clairement** chaque option en expliquant :
+- **Le nom exact du document** (Mise en demeure, Requête aux Prud'hommes, Lettre de réclamation, etc.)
+- **Pourquoi ce document est adapté** à leur situation spécifique
+- **Les avantages** (rapidité, coût, efficacité, force juridique)
+- **Les limites ou inconvénients** (délais, complexité, risques)
+- **Le niveau d'efficacité juridique** (du plus léger au plus lourd)
+
+**3. GUIDE le choix** en fonction de :
+- L'urgence de la situation
+- La gravité du préjudice
+- Les démarches déjà entreprises
+- L'objectif recherché (règlement rapide, action en justice, etc.)
+
+### Exemple de formulation naturelle :
+
+"D'accord, j'ai bien compris ta situation. Plusieurs options s'offrent à toi selon ce que tu souhaites obtenir :
+
+**Option 1 : Mise en demeure**
+C'est une lettre formelle qui met l'autre partie en demeure de respecter ses obligations dans un délai précis.
+
+Avantages : Rapide à envoyer, peu coûteux, crée une preuve juridique de tes démarches, peut suffire à débloquer la situation.
+
+Limites : N'a pas de force exécutoire - si la personne refuse toujours, il faudra aller plus loin.
+
+**Option 2 : Requête aux Prud'hommes**
+C'est une action en justice devant le tribunal pour obtenir réparation.
+
+Avantages : Permet d'obtenir une décision de justice contraignante, peut aboutir à une réintégration ou à des dommages-intérêts importants.
+
+Limites : Procédure plus longue (6 à 12 mois en moyenne), nécessite des preuves solides, peut générer du stress.
+
+**Option 3 : Lettre de réclamation amiable**
+C'est une démarche plus souple qui explique le problème et demande une solution à l'amiable.
+
+Avantages : Maintient le dialogue, peut préserver la relation, solution plus rapide si l'autre partie est de bonne foi.
+
+Limites : Moins de pression juridique, moins efficace si l'autre partie est de mauvaise foi.
+
+**Mon conseil** : Vu que [explication personnalisée selon le contexte], je te recommanderais plutôt [option recommandée], mais c'est à toi de voir ce qui te convient le mieux.
+
+Quelle option te semble la plus adaptée à ta situation ?"
+
+**4. ATTENDS leur choix** avant de dire "GENERATE_DOCUMENT"
+
+Exemples de formulations à détecter :
+- "Je prends l'option 1"
+- "Je préfère la mise en demeure"
+- "On va faire la requête aux prud'hommes"
+- "Vas-y avec la lettre de réclamation"
+
+Une fois qu'ils ont choisi, confirme leur choix puis lance la génération.
+
+---
+
+## ⚠️ RÈGLE ABSOLUE - TRANSITION GÉNÉRATION
+
+Quand l'utilisateur dit "oui", "ok", "génère", "vas-y", "c'est bon", "d'accord" **ET qu'il a déjà choisi le type de document** :
+
+**RÉPONDS EXACTEMENT (mot pour mot) :**
+```
+GENERATE_DOCUMENT
+```
+
+**NE PAS** rédiger le document dans le chat.
+**NE PAS** commencer à écrire quoi que ce soit.
+**Juste** : `GENERATE_DOCUMENT`
+
+---
+
 **RAPPEL FINAL :** Tu es quelqu'un qui **écoute sincèrement** pour comprendre le véritable problème. Ta bienveillance et ta patience permettent à la personne de te confier toutes les informations nécessaires naturellement.`;
 
 /**
@@ -514,17 +589,42 @@ export function shouldGenerateDocument(response: string): boolean {
  * Extrait le type de document de la conversation
  */
 export function extractDocumentType(conversationHistory: string): string {
+  const lowerHistory = conversationHistory.toLowerCase();
+
+  // Détection des choix d'options explicites
+  if (lowerHistory.includes('option 1') || lowerHistory.includes('la première option') ||
+      lowerHistory.includes('mise en demeure')) {
+    return 'Mise en demeure';
+  }
+
+  if (lowerHistory.includes('option 2') || lowerHistory.includes('la deuxième option') ||
+      lowerHistory.includes('requête') || lowerHistory.includes('prud\'hommes') ||
+      lowerHistory.includes('prudhommes') || lowerHistory.includes('action en justice')) {
+    return 'Requête aux Prud\'hommes';
+  }
+
+  if (lowerHistory.includes('option 3') || lowerHistory.includes('la troisième option') ||
+      lowerHistory.includes('réclamation') || lowerHistory.includes('amiable')) {
+    return 'Lettre de réclamation amiable';
+  }
+
+  // Détection des types de documents classiques
   const types = [
-    'mise en demeure',
-    'lettre de réclamation',
-    'plainte',
-    'demande de justification',
-    'contestation',
+    { keywords: ['mise en demeure', 'mise en demeure'], type: 'Mise en demeure' },
+    { keywords: ['lettre de réclamation', 'réclamation'], type: 'Lettre de réclamation' },
+    { keywords: ['plainte', 'dépôt de plainte'], type: 'Plainte' },
+    { keywords: ['demande de justification', 'justification'], type: 'Demande de justification' },
+    { keywords: ['contestation', 'contester'], type: 'Contestation' },
+    { keywords: ['licenciement', 'viré', 'renvoi'], type: 'Contestation de licenciement' },
+    { keywords: ['bail', 'location', 'loyer'], type: 'Contentieux de bail' },
+    { keywords: ['contrat', 'prestation'], type: 'Contentieux contractuel' },
   ];
 
-  for (const type of types) {
-    if (conversationHistory.toLowerCase().includes(type)) {
-      return type;
+  for (const { keywords, type } of types) {
+    for (const keyword of keywords) {
+      if (lowerHistory.includes(keyword)) {
+        return type;
+      }
     }
   }
 
