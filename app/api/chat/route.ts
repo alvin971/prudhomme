@@ -9,7 +9,13 @@ export async function POST(req: NextRequest) {
   try {
     const { messages, systemPrompt, maxTokens = 1024 } = await req.json();
 
+    console.log('🔍 API Route - Début traitement');
+    console.log('📝 Messages:', JSON.stringify(messages));
+    console.log('📝 System prompt length:', systemPrompt?.length);
+    console.log('📝 Max tokens:', maxTokens);
+
     if (!messages || !Array.isArray(messages)) {
+      console.error('❌ Messages invalides');
       return NextResponse.json(
         { error: 'Invalid messages format' },
         { status: 400 }
@@ -17,11 +23,23 @@ export async function POST(req: NextRequest) {
     }
 
     if (!ANTHROPIC_API_KEY) {
+      console.error('❌ Clé API manquante');
       return NextResponse.json(
         { error: 'Anthropic API key not configured' },
         { status: 500 }
       );
     }
+
+    console.log('✅ Clé API présente:', ANTHROPIC_API_KEY.substring(0, 15) + '...');
+
+    const requestBody = {
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: messages,
+    };
+
+    console.log('🚀 Envoi à Anthropic API...');
 
     const response = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
@@ -38,12 +56,15 @@ export async function POST(req: NextRequest) {
       }),
     });
 
+    console.log('📡 Réponse Anthropic - Status:', response.status);
+
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('❌ Erreur Anthropic:', JSON.stringify(errorData, null, 2));
 
       if (response.status === 401) {
         return NextResponse.json(
-          { error: 'Invalid API key' },
+          { error: 'Invalid API key - Vérifiez la clé dans Cloudflare' },
           { status: 401 }
         );
       }
@@ -52,6 +73,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           { error: 'Rate limit exceeded' },
           { status: 429 }
+        );
+      }
+
+      if (response.status === 400) {
+        console.error('❌ Erreur 400 détails:', errorData?.error?.message);
+        return NextResponse.json(
+          { error: `Erreur 400: ${errorData?.error?.message || 'Requête invalide'}` },
+          { status: 400 }
         );
       }
 
@@ -64,12 +93,14 @@ export async function POST(req: NextRequest) {
     const data = await response.json();
     const aiMessage = data.content[0].text;
 
+    console.log('✅ Réponse reçue, longueur:', aiMessage.length);
+
     return NextResponse.json({ message: aiMessage });
   } catch (error: any) {
-    console.error('Anthropic API error:', error.message);
+    console.error('❌ Exception:', error.message, error.stack);
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error: ' + error.message },
       { status: 500 }
     );
   }
