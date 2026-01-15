@@ -575,24 +575,7 @@ ${conversationText}
 
 ---
 
-## CONSIGNES FINALES IMPÉRATIVES
-
-Tu dois maintenant générer le document juridique COMPLET et FINAL.
-
-**INTERDICTIONS ABSOLUES :**
-- ❌ NE PAS écrire "Voici le document" ou toute introduction
-- ❌ NE PAS écrire "[Le document complet...]" ou description méta
-- ❌ NE PAS écrire "Voulez-vous que je reproduise..."
-- ❌ NE PAS faire de résumé ou d'explication
-- ❌ NE PAS lister les placeholders que tu vas remplir
-
-**CE QU'IL FAUT FAIRE :**
-✅ COMMENCE DIRECTEMENT par le titre du tribunal (ex: "CONSEIL DE PRUD'HOMMES DE...")
-✅ GÉNÈRE le document juridique COMPLET du début à la fin
-✅ UTILISE les données de la conversation ci-dessus pour remplir le document
-✅ UTILISE des placeholders {{VARIABLE}} UNIQUEMENT pour les données personnelles non fournies
-
-**Génère le document maintenant. Première ligne = titre du tribunal.**`;
+Génère maintenant UNIQUEMENT le document juridique complet (sans introduction, sans "Je vais générer..."), en utilisant des placeholders {{VARIABLE}} pour toutes les données personnelles.`;
 }
 
 /**
