@@ -56,6 +56,6 @@ export async function generateDocument(
     [{ role: 'user', content: 'Génère le document complet maintenant.' }],
     systemPrompt,
     8000,
-    'claude-sonnet-4-20250514'
+    'claude-sonnet-4-5-20250929'
   );
 }
