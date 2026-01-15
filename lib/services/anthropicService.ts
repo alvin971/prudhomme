@@ -8,7 +8,8 @@ export interface Message {
 export async function sendMessageToAI(
   messages: Message[],
   systemPrompt: string = CHATBOT_SYSTEM_PROMPT,
-  maxTokens: number = 1024
+  maxTokens: number = 1024,
+  model: string = 'claude-3-5-haiku-20241022'
 ): Promise<string> {
   try {
     // Nettoyer les messages pour garder seulement role et content
@@ -27,6 +28,7 @@ export async function sendMessageToAI(
         messages: cleanMessages,
         systemPrompt: systemPrompt,
         maxTokens: maxTokens,
+        model: model,
       }),
     });
 
@@ -48,9 +50,11 @@ export async function generateDocument(
 ): Promise<string> {
   const systemPrompt = getDocumentGenerationPrompt(documentType, conversationText);
 
+  // Utiliser Claude Sonnet 4.5 pour la génération de documents (plus intelligent)
   return sendMessageToAI(
     [{ role: 'user', content: 'Génère le document complet maintenant.' }],
     systemPrompt,
-    3000
+    3000,
+    'claude-sonnet-4-5-20250929'
   );
 }

@@ -7,12 +7,13 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, systemPrompt, maxTokens = 1024 } = await req.json();
+    const { messages, systemPrompt, maxTokens = 1024, model = 'claude-3-5-haiku-20241022' } = await req.json();
 
     console.log('🔍 API Route - Début traitement');
     console.log('📝 Messages:', JSON.stringify(messages));
     console.log('📝 System prompt length:', systemPrompt?.length);
     console.log('📝 Max tokens:', maxTokens);
+    console.log('🤖 Model:', model);
 
     if (!messages || !Array.isArray(messages)) {
       console.error('❌ Messages invalides');
@@ -32,13 +33,6 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ Clé API présente:', ANTHROPIC_API_KEY.substring(0, 15) + '...');
 
-    const requestBody = {
-      model: 'claude-3-5-haiku-20241022',
-      max_tokens: maxTokens,
-      system: systemPrompt,
-      messages: messages,
-    };
-
     console.log('🚀 Envoi à Anthropic API...');
 
     const response = await fetch(ANTHROPIC_API_URL, {
@@ -49,7 +43,7 @@ export async function POST(req: NextRequest) {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-haiku-20241022',
+        model: model,
         max_tokens: maxTokens,
         system: systemPrompt,
         messages: messages,
