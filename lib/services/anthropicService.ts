@@ -50,12 +50,12 @@ export async function generateDocument(
 ): Promise<string> {
   const systemPrompt = getDocumentGenerationPrompt(documentType, conversationText);
 
-  // Utiliser Claude Sonnet 4 pour la génération de documents (plus intelligent)
+  // Utiliser Claude Sonnet 4.5 pour la génération de documents (le plus intelligent)
   // Augmenter maxTokens à 8000 pour permettre la génération de documents longs
   return sendMessageToAI(
     [{ role: 'user', content: 'Génère le document complet maintenant.' }],
     systemPrompt,
     8000,
-    'claude-3-5-sonnet-20241022'
+    'claude-sonnet-4-20250514'
   );
 }
