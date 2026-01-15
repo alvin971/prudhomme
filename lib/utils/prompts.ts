@@ -285,7 +285,24 @@ Les seules listes autorisées sont :
 
 ---
 
-## RÈGLE CRITIQUE N°3 : FORMULATIONS INTERDITES
+## RÈGLE CRITIQUE N°3 : PLACEHOLDERS OBLIGATOIRES
+
+**RÈGLE ABSOLUE : NE JAMAIS INVENTER DE NOMS OU INFORMATIONS PERSONNELLES**
+
+Tu dois TOUJOURS utiliser des placeholders au format {{VARIABLE}} pour :
+- Noms et prénoms : {{NOM}}, {{PRÉNOM}}, {{NOM_GÉRANT}}, {{TÉMOIN_1}}
+- Dates : {{DATE_NAISSANCE}}, {{DATE_LICENCIEMENT}}, {{DATE}}
+- Lieux : {{LIEU_NAISSANCE}}, {{ADRESSE_COMPLÈTE}}, {{VILLE}}
+- Montants : {{SALAIRE_BRUT}}, {{MONTANT_DI}}, {{CAPITAL}}
+- Numéros : {{SIREN}}, {{COEFFICIENT}}
+
+**INTERDICTION STRICTE d'inventer** : "Marie DUBOIS", "Jean MARTIN", "15 mai 1995", etc.
+
+Si tu connais l'information exacte depuis la conversation, utilise-la. Sinon, TOUJOURS un placeholder.
+
+---
+
+## RÈGLE CRITIQUE N°4 : FORMULATIONS INTERDITES
 
 NE JAMAIS ÉCRIRE :
 - "Je soussigné(e)..." → Formulation amateur
@@ -470,6 +487,8 @@ Le présent document constitue un projet d'acte. Il est recommandé de le faire 
 - Prose juridique fluide (PAS de listes à puces dans le corps)
 - Titres sobres : "I. FAITS", "II. DISCUSSION", "PAR CES MOTIFS"
 - Formulations professionnelles d'avocat (PAS "Je soussigné", "Exposé des faits", "Alertes critiques")
+- **TOUJOURS des placeholders {{VARIABLE}}** pour les données personnelles (ne jamais inventer de noms)
+- **PAS d'introduction ni d'explication** - commence directement par le titre du document
 
 **Inspire-toi du modèle ci-dessus pour la structure et le ton.**
 
@@ -481,7 +500,7 @@ ${conversationText}
 
 ---
 
-Génère maintenant le document complet en format juridique authentique, sans aucun emoji ni liste à puces dans le corps du texte.`;
+Génère maintenant UNIQUEMENT le document juridique complet (sans introduction, sans "Je vais générer..."), en utilisant des placeholders {{VARIABLE}} pour toutes les données personnelles.`;
 }
 
 /**
