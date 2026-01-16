@@ -48,20 +48,14 @@ export async function generateDocument(
   documentType: string,
   conversationText: string
 ): Promise<string> {
-  // Partie fixe du prompt (sera mise en cache - ~4000 tokens économisés)
+  // Partie fixe du prompt (sera mise en cache si disponible - ~4000 tokens)
   const systemPrompt = getDocumentGenerationPromptFixed();
 
-  // Extraire UNIQUEMENT les messages de l'utilisateur (supprimer les réponses du chatbot)
-  const userMessagesOnly = conversationText
-    .split('\n')
-    .filter(line => line.startsWith('user:'))
-    .map(line => line.replace('user:', '').trim())
-    .join('\n');
+  // Message utilisateur avec la conversation COMPLÈTE (user + assistant)
+  // Cela permet à l'IA de comprendre le contexte complet
+  const userMessage = `Voici la conversation complète avec l'utilisateur :
 
-  // Message utilisateur avec les données collectées
-  const userMessage = `Voici les informations fournies par l'utilisateur pendant la conversation :
-
-${userMessagesOnly}
+${conversationText}
 
 ---
 
