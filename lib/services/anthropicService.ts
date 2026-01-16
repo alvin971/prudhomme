@@ -1,4 +1,4 @@
-import { CHATBOT_SYSTEM_PROMPT, getDocumentGenerationPrompt } from '../utils/prompts';
+import { CHATBOT_SYSTEM_PROMPT, getDocumentGenerationPrompt, getDocumentGenerationPromptFixed } from '../utils/prompts';
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -48,12 +48,29 @@ export async function generateDocument(
   documentType: string,
   conversationText: string
 ): Promise<string> {
-  const systemPrompt = getDocumentGenerationPrompt(documentType, conversationText);
+  // Partie fixe du prompt (sera mise en cache - ~4000 tokens économisés)
+  const systemPrompt = getDocumentGenerationPromptFixed();
+
+  // Extraire UNIQUEMENT les messages de l'utilisateur (supprimer les réponses du chatbot)
+  const userMessagesOnly = conversationText
+    .split('\n')
+    .filter(line => line.startsWith('user:'))
+    .map(line => line.replace('user:', '').trim())
+    .join('\n');
+
+  // Message utilisateur avec les données collectées
+  const userMessage = `Voici les informations fournies par l'utilisateur pendant la conversation :
+
+${userMessagesOnly}
+
+---
+
+Génère maintenant UNIQUEMENT le document juridique complet (sans introduction, sans "Je vais générer..."), en utilisant des placeholders {{VARIABLE}} pour toutes les données personnelles non fournies.`;
 
   // Utiliser Claude Sonnet 4.5 pour la génération de documents (le plus intelligent)
   // Augmenter maxTokens à 8000 pour permettre la génération de documents longs
   return sendMessageToAI(
-    [{ role: 'user', content: 'Génère le document complet maintenant.' }],
+    [{ role: 'user', content: userMessage }],
     systemPrompt,
     8000,
     'claude-sonnet-4-5-20250929'

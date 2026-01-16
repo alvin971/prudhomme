@@ -330,8 +330,9 @@ GENERATE_DOCUMENT
 /**
  * Prompt de génération de document (niveau avocat expert)
  * Version stricte sans emojis
+ * PARTIE FIXE - sera mise en cache
  */
-export function getDocumentGenerationPrompt(documentType: string, conversationText: string): string {
+export function getDocumentGenerationPromptFixed(): string {
   return `Tu es un avocat au Barreau de Paris depuis 18 ans. Tu rédiges des actes juridiques authentiques pour ton cabinet.
 
 ---
@@ -561,7 +562,14 @@ Le présent document constitue un projet d'acte. Il est recommandé de le faire 
 - **TOUJOURS des placeholders {{VARIABLE}}** pour les données personnelles (ne jamais inventer de noms)
 - **PAS d'introduction ni d'explication** - commence directement par le titre du document
 
-**Inspire-toi du modèle ci-dessus pour la structure et le ton.**
+**Inspire-toi du modèle ci-dessus pour la structure et le ton.**`;
+}
+
+/**
+ * Ancienne fonction - garde pour compatibilité
+ */
+export function getDocumentGenerationPrompt(documentType: string, conversationText: string): string {
+  return `${getDocumentGenerationPromptFixed()}
 
 ---
 
