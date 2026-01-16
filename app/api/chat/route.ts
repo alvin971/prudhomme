@@ -35,26 +35,17 @@ export async function POST(req: NextRequest) {
 
     console.log('🚀 Envoi à Anthropic API...');
 
-    // Utiliser le prompt caching pour économiser des tokens
-    const systemContent = typeof systemPrompt === 'string'
-      ? [{
-          type: "text",
-          text: systemPrompt,
-          cache_control: { type: "ephemeral" }
-        }]
-      : systemPrompt;
-
     const response = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
       headers: {
         'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2024-10-22',
+        'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
       },
       body: JSON.stringify({
         model: model,
         max_tokens: maxTokens,
-        system: systemContent,
+        system: systemPrompt,
         messages: messages,
       }),
     });
