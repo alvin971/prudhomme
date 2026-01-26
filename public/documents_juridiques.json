@@ -1,0 +1,122 @@
+[
+  {
+    "document_id": 1,
+    "groupe_nom": "DROIT DE LA CONSOMMATION",
+    "document_nom": "Mise en demeure de remboursement",
+    "donnees_necessaires": "- Montant à réclamer\n- Date de l'achat\n- Nature du produit/service\n- Motif du remboursement\n- Démarches déjà effectuées"
+  },
+  {
+    "document_id": 2,
+    "groupe_nom": "DROIT DE LA CONSOMMATION",
+    "document_nom": "Réclamation pour produit défectueux",
+    "donnees_necessaires": "- Description du produit\n- Date d'achat\n- Nature du défaut\n- Préjudice subi\n- Garantie applicable"
+  },
+  {
+    "document_id": 3,
+    "groupe_nom": "DROIT DU TRAVAIL",
+    "document_nom": "Contestation de licenciement",
+    "donnees_necessaires": "- Date du licenciement\n- Motif invoqué par l'employeur\n- Ancienneté dans l'entreprise\n- Circonstances du licenciement\n- Éléments de défense"
+  },
+  {
+    "document_id": 4,
+    "groupe_nom": "DROIT DU TRAVAIL",
+    "document_nom": "Demande de rappel de salaire",
+    "donnees_necessaires": "- Période concernée\n- Montant réclamé\n- Justification du montant\n- Heures supplémentaires effectuées\n- Primes non versées"
+  },
+  {
+    "document_id": 5,
+    "groupe_nom": "DROIT DU TRAVAIL",
+    "document_nom": "Demande de rupture conventionnelle",
+    "donnees_necessaires": "- Ancienneté dans l'entreprise\n- Poste occupé\n- Raisons de la demande\n- Indemnités souhaitées\n- Préavis envisagé"
+  },
+  {
+    "document_id": 6,
+    "groupe_nom": "DROIT LOCATIF",
+    "document_nom": "Mise en demeure de réparations",
+    "donnees_necessaires": "- Nature des réparations\n- Date de signalement au bailleur\n- Impact sur la jouissance du logement\n- Preuves (photos, constats)\n- Délai souhaité pour les travaux"
+  },
+  {
+    "document_id": 7,
+    "groupe_nom": "DROIT LOCATIF",
+    "document_nom": "Contestation d'augmentation de loyer",
+    "donnees_necessaires": "- Montant actuel du loyer\n- Nouveau montant proposé\n- Date de notification\n- Justification de l'augmentation\n- Loyers pratiqués dans le voisinage"
+  },
+  {
+    "document_id": 8,
+    "groupe_nom": "DROIT LOCATIF",
+    "document_nom": "Demande de restitution de dépôt de garantie",
+    "donnees_necessaires": "- Montant du dépôt\n- Date de départ du logement\n- État des lieux de sortie\n- Délai écoulé depuis le départ\n- Retenues abusives éventuelles"
+  },
+  {
+    "document_id": 9,
+    "groupe_nom": "DROIT DES ASSURANCES",
+    "document_nom": "Contestation de refus d'indemnisation",
+    "donnees_necessaires": "- Nature du sinistre\n- Date du sinistre\n- Motif du refus\n- Montant réclamé\n- Éléments du contrat d'assurance"
+  },
+  {
+    "document_id": 10,
+    "groupe_nom": "DROIT DES ASSURANCES",
+    "document_nom": "Demande de réévaluation d'indemnisation",
+    "donnees_necessaires": "- Montant proposé par l'assureur\n- Montant réel des dommages\n- Expertises réalisées\n- Justificatifs de valeur\n- Préjudice complémentaire"
+  },
+  {
+    "document_id": 11,
+    "groupe_nom": "DROIT DE LA FAMILLE",
+    "document_nom": "Demande de pension alimentaire",
+    "donnees_necessaires": "- Lien de parenté\n- Revenus du débiteur\n- Besoins du créancier\n- Situation familiale\n- Charges actuelles"
+  },
+  {
+    "document_id": 12,
+    "groupe_nom": "DROIT DE LA FAMILLE",
+    "document_nom": "Modification de droit de visite",
+    "donnees_necessaires": "- Modalités actuelles\n- Raisons de la demande\n- Situation de l'enfant\n- Disponibilités des parents\n- Intérêt de l'enfant"
+  },
+  {
+    "document_id": 13,
+    "groupe_nom": "DROIT DES SUCCESSIONS",
+    "document_nom": "Contestation de testament",
+    "donnees_necessaires": "- Date du testament\n- Motifs de contestation\n- Liens avec le défunt\n- Autres héritiers\n- Éléments de preuve"
+  },
+  {
+    "document_id": 14,
+    "groupe_nom": "DROIT DES SUCCESSIONS",
+    "document_nom": "Demande de partage de succession",
+    "donnees_necessaires": "- Date du décès\n- Héritiers concernés\n- Biens à partager\n- Blocages rencontrés\n- Propositions de partage"
+  },
+  {
+    "document_id": 15,
+    "groupe_nom": "DROIT BANCAIRE",
+    "document_nom": "Contestation de frais bancaires",
+    "donnees_necessaires": "- Nature des frais\n- Montant contesté\n- Période concernée\n- Justification de la contestation\n- Démarches préalables"
+  },
+  {
+    "document_id": 16,
+    "groupe_nom": "DROIT BANCAIRE",
+    "document_nom": "Demande de déblocage de compte",
+    "donnees_necessaires": "- Date du blocage\n- Motif invoqué par la banque\n- Impact du blocage\n- Justificatifs disponibles\n- Urgence de la situation"
+  },
+  {
+    "document_id": 17,
+    "groupe_nom": "DROIT DU NUMÉRIQUE",
+    "document_nom": "Demande de suppression de données personnelles",
+    "donnees_necessaires": "- Données concernées\n- Plateforme/entreprise détentrice\n- Fondement juridique (RGPD)\n- Préjudice éventuel\n- Refus précédents"
+  },
+  {
+    "document_id": 18,
+    "groupe_nom": "DROIT DU NUMÉRIQUE",
+    "document_nom": "Réclamation pour violation de vie privée",
+    "donnees_necessaires": "- Nature de la violation\n- Date de découverte\n- Données exposées\n- Préjudice subi\n- Responsable identifié"
+  },
+  {
+    "document_id": 19,
+    "groupe_nom": "DROIT DE LA SANTÉ",
+    "document_nom": "Demande de dossier médical",
+    "donnees_necessaires": "- Établissement concerné\n- Période de soins\n- Motif de la demande\n- Délai écoulé\n- Refus précédents"
+  },
+  {
+    "document_id": 20,
+    "groupe_nom": "DROIT DE LA SANTÉ",
+    "document_nom": "Contestation de refus de soins",
+    "donnees_necessaires": "- Date du refus\n- Praticien/établissement concerné\n- Nature des soins refusés\n- Motif invoqué\n- Urgence médicale"
+  }
+]
