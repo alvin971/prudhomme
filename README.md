@@ -391,5 +391,5 @@ Remplacer les fichiers dans `public/logos/`
 ---
 
 **Version** : 1.0.0
-**Dernière mise à jour** : Janvier 2026
+**Dernière mise à jour** : Janvier 2026 (mise à jour production)
 **Auteur** : PRUDHOMME Team
