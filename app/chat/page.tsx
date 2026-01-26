@@ -8,12 +8,6 @@ import { extractDocumentType, shouldGenerateDocument } from '@/lib/utils/prompts
 import { generatePDF } from '@/lib/services/documentService';
 import { FaMicrophone, FaPaperPlane, FaBars, FaTimes, FaCheck } from 'react-icons/fa';
 import Drawer from '@/components/common/Drawer';
-import { AnalysisState, AnalysisPhase } from '@/lib/types/analysis';
-import {
-  createInitialAnalysisState,
-  processWithAnalysis,
-  resetAnalysisState
-} from '@/lib/services/analysisOrchestrator';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -46,10 +40,6 @@ export default function ChatPage() {
   const interimTextRef = useRef('');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-
-  // États pour le système d'analyse intelligent
-  const [analysisState, setAnalysisState] = useState<AnalysisState>(createInitialAnalysisState());
-  const [analysisMessage, setAnalysisMessage] = useState<string>('');
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -301,12 +291,6 @@ export default function ChatPage() {
     }
   };
 
-  // Callback pour les changements de phase d'analyse
-  const handlePhaseChange = (phase: AnalysisPhase, message?: string) => {
-    setAnalysisState(prev => ({ ...prev, phase }));
-    if (message) setAnalysisMessage(message);
-  };
-
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
@@ -329,37 +313,19 @@ export default function ChatPage() {
           role: m.role as 'user' | 'assistant',
           content: m.content
         }));
+      const response = await sendMessageToAI(aiMessages);
 
-      // Utiliser le système d'analyse intelligent
-      const { response: analysisResponse, newState, shouldUseStandardPrompt } = await processWithAnalysis(
-        aiMessages,
-        analysisState,
-        handlePhaseChange
-      );
-
-      setAnalysisState(newState);
-      setAnalysisMessage('');
-
-      let finalResponse: string;
-      if (shouldUseStandardPrompt) {
-        // Messages 1-3 : utiliser le prompt standard existant
-        finalResponse = await sendMessageToAI(aiMessages);
-      } else {
-        // Messages 4+ : utiliser la réponse de l'analyse
-        finalResponse = analysisResponse;
-      }
-
-      await typewriterEffect(finalResponse);
+      await typewriterEffect(response);
 
       setMessages(prev => [...prev, {
         role: 'assistant' as const,
-        content: finalResponse,
+        content: response,
         timestamp: new Date()
       }]);
       setTypingMessage('');
 
       // Détecte si l'IA demande à générer le document
-      if (shouldGenerateDocument(finalResponse)) {
+      if (shouldGenerateDocument(response)) {
         const conversationText = conversationMessages.map(m => m.role + ': ' + m.content).join('\n');
         const documentType = extractDocumentType(conversationText);
 
@@ -400,9 +366,6 @@ export default function ChatPage() {
             timestamp: new Date()
           }
         ]);
-
-        // Réinitialiser l'état d'analyse après génération réussie
-        setAnalysisState(resetAnalysisState());
       }
     } catch (error) {
       console.error('Erreur:', error);
@@ -475,11 +438,6 @@ export default function ChatPage() {
 
         {loading && !typingMessage && (
           <div className="px-3 sm:px-4 pb-4">
-            {analysisMessage && (
-              <div className="mb-2 text-sm text-[#64748B] text-center">
-                {analysisMessage}
-              </div>
-            )}
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-[#1E3A8A] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
               <div className="w-2 h-2 bg-[#1E3A8A] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
