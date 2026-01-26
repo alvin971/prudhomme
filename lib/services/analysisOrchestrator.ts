@@ -50,7 +50,7 @@ export async function processWithAnalysis(
   // ============================================
   // Message 4 : Déclencher l'analyse
   // ============================================
-  if (userCount === 4 && currentState.phase === 'standard') {
+  if (userCount === 4 && (currentState.phase === 'standard' || !currentState.domainesResult)) {
     onPhaseChange('calculating_domains', '🔍 Analyse de votre situation...');
 
     const conversationText = formatConversationHistory(messages);
