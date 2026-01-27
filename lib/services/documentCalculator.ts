@@ -21,10 +21,12 @@ export async function calculateDocuments(
   const data = await response.json();
   const content = data.message || '';
 
-  console.log('📄 [documentCalculator] Réponse brute de l\'API:', content);
+  // Supprimer les caractères \n pour éviter les erreurs de parsing JSON
+  const cleanContent = content.replace(/\n/g, '');
+  console.log('📄 [documentCalculator] Réponse nettoyée:', cleanContent.substring(0, 200));
 
   // Extraire JSON avec une regex plus précise (cherche le dernier bloc JSON)
-  const jsonMatches = content.match(/\{[\s\S]*\}/g);
+  const jsonMatches = cleanContent.match(/\{[\s\S]*\}/g);
   if (!jsonMatches || jsonMatches.length === 0) {
     console.error('❌ [documentCalculator] Aucun JSON trouvé dans la réponse');
     return { documents: [], reponse_formatee: 'Erreur lors de l\'analyse : la réponse de l\'IA ne contient pas de données structurées.' };
