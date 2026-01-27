@@ -84,23 +84,44 @@ ${documentsList}
 - Classe par priorité (1 = plus prioritaire)
 
 ### PARTIE 2 - RÉDACTION
-Rédige une réponse conversationnelle naturelle qui :
-- Présente les 3-4 documents sélectionnés
-- Explique pour chacun : ce que ça fait, quand l'utiliser
-- Donne un conseil
-- Demande à l'utilisateur de choisir
 
-## STYLE
-- Naturel, accessible, pas de jargon
-- Emojis pour structurer (🎯 ⚖️ 📄 💼)
-- Options numérotées (1️⃣ 2️⃣ 3️⃣)
+⚠️ RÈGLE CRITIQUE - FORMAT EXACT
+
+La réponse DOIT respecter STRICTEMENT ce format, mot pour mot, sans aucune modification :
+
+🎯 **Votre situation juridique**
+
+D'après votre [problématique], j'ai identifié [nombre] démarches clés :
+
+1️⃣ [document_nom] ([pourcentage]%)
+→ [utilite]
+
+2️⃣ [document_nom] ([pourcentage]%)
+→ [utilite]
+
+3️⃣ [document_nom] ([pourcentage]%)
+→ [utilite]
+
+💡 **Mon conseil** : [conseil]
+
+Quelle démarche souhaitez-vous entreprendre en priorité ?
+1️⃣ [document_nom]
+2️⃣ [document_nom]
+3️⃣ [document_nom]
+
+⚠️ RÈGLES CRITIQUES - RÉDACTION
+- Les [document_nom] doivent être les EXACTS noms de la liste ci-dessus, mot pour mot
+- NE JAMAIS modifier un nom (ex: "Lettre de mise en demeure" → jamais "Mise en demeure de salaire")
+- NE JAMAIS inventer de nouveaux documents (ex: jamais "Injonction de payer" si pas dans la liste)
+- NE JAMAIS ajouter de texte introductif avant les 1️⃣
+- Utilise les mêmes emojis que dans l'exemple
 
 ## FORMAT DE SORTIE (JSON STRICT)
 {
   "documents": [
     {
       "document_id": 16,
-      "document_nom": "Nom exact",
+      "document_nom": "Nom EXACT du JSON",
       "groupe_nom": "Nom du groupe",
       "pourcentage": 85,
       "utilite": "Ce que ce document permet",
@@ -109,14 +130,16 @@ Rédige une réponse conversationnelle naturelle qui :
       "priorite": 1
     }
   ],
-  "reponse_formatee": "D'après votre situation...\\n\\n🎯 **Option 1** - Nom (85%)\\n→ Ce que ça fait : ...\\n\\n⚖️ **Option 2** - Nom (60%)\\n→ Ce que ça fait : ...\\n\\n💡 **Mon conseil** : ...\\n\\nQuelle démarche souhaitez-vous ?\\n1️⃣ Option 1\\n2️⃣ Option 2\\n3️⃣ Option 3"
+  "reponse_formatee": "🎯 **Votre situation juridique**\\n\\nD'après votre [problématique], j'ai identifié [nombre] démarches clés :\\n\\n1️⃣ [document_nom] ([pourcentage]%)\\n→ [utilite]\\n\\n2️⃣ [document_nom] ([pourcentage]%)\\n→ [utilite]\\n\\n3️⃣ [document_nom] ([pourcentage]%)\\n→ [utilite]\\n\\n💡 **Mon conseil** : [conseil]\\n\\nQuelle démarche souhaitez-vous entreprendre en priorité ?\\n1️⃣ [document_nom]\\n2️⃣ [document_nom]\\n3️⃣ [document_nom]"
 }
 
 ## RÈGLES CRITIQUES
 - Utilise les document_id EXACTS de la liste
-- Utilise les document_nom EXACTS de la liste (NE JAMAIS inventer de noms)
-- JSON valide uniquement
-- reponse_formatee = texte naturel et engageant`;
+- Utilise les document_nom EXACTS de la liste, MOT POUR MOT, sans aucune modification
+- NE JAMAIS inventer de noms ou de documents
+- NE JAMAIS modifier les noms existants
+- La réponse DOIT commencer par "🎯 **Votre situation juridique**"
+- JSON valide uniquement`;
 }
 
 // ====================================================================
