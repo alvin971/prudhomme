@@ -12,7 +12,8 @@ export async function calculateDocuments(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: 'Sélectionne les documents et retourne le JSON demandé.' }],
+      systemPrompt: prompt,
       maxTokens: 2000
     })
   });
@@ -20,14 +21,25 @@ export async function calculateDocuments(
   const data = await response.json();
   const content = data.message || '';
 
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    return { documents: [], reponse_formatee: 'Erreur lors de l\'analyse.' };
+  console.log('📄 [documentCalculator] Réponse brute de l\'API:', content);
+
+  // Extraire JSON avec une regex plus précise (cherche le dernier bloc JSON)
+  const jsonMatches = content.match(/\{[\s\S]*\}/g);
+  if (!jsonMatches || jsonMatches.length === 0) {
+    console.error('❌ [documentCalculator] Aucun JSON trouvé dans la réponse');
+    return { documents: [], reponse_formatee: 'Erreur lors de l\'analyse : la réponse de l\'IA ne contient pas de données structurées.' };
   }
 
+  // Prendre le dernier JSON (souvent le plus complet)
+  const jsonStr = jsonMatches[jsonMatches.length - 1];
+
   try {
-    return JSON.parse(jsonMatch[0]);
-  } catch {
-    return { documents: [], reponse_formatee: 'Erreur lors de l\'analyse.' };
+    const parsed = JSON.parse(jsonStr);
+    console.log('✅ [documentCalculator] JSON parsé avec succès');
+    return parsed;
+  } catch (e) {
+    console.error('❌ [documentCalculator] Erreur de parsing JSON:', e);
+    console.log('❌ [documentCalculator] JSON invalide:', jsonStr);
+    return { documents: [], reponse_formatee: 'Erreur lors de l\'analyse : impossible de traiter la réponse de l\'IA.' };
   }
 }
