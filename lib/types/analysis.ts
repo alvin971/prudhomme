@@ -11,6 +11,7 @@ export interface DocumentJuridique {
   groupe_nom: string;
   document_nom: string;
   donnees_necessaires: string;
+  architecture?: string;
 }
 
 export interface DomainePertinent {
@@ -29,6 +30,7 @@ export interface DocumentSelectionne {
   document_id: number;
   document_nom: string;
   groupe_nom: string;
+  architecture?: string;
   pourcentage: number;
   utilite: string;
   quand_utiliser: string;

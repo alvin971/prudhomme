@@ -43,10 +43,10 @@ export async function sendMessageToAI(
 }
 
 export async function generateDocument(
-  documentType: string,
+  selectedDocument: any,
   conversationText: string
 ): Promise<string> {
-  const systemPrompt = getDocumentGenerationPrompt(documentType, conversationText);
+  const systemPrompt = getDocumentGenerationPrompt(selectedDocument, conversationText);
 
   return sendMessageToAI(
     [{ role: 'user', content: 'Génère le document complet maintenant.' }],
