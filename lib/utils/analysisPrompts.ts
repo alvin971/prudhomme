@@ -114,6 +114,7 @@ Rédige une réponse conversationnelle naturelle qui :
 
 ## RÈGLES CRITIQUES
 - Utilise les document_id EXACTS de la liste
+- Utilise les document_nom EXACTS de la liste (NE JAMAIS inventer de noms)
 - JSON valide uniquement
 - reponse_formatee = texte naturel et engageant`;
 }
