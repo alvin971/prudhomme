@@ -369,7 +369,7 @@ export default function ChatPage() {
           timestamp: new Date()
         }]);
 
-        const documentContent = await generateDocument(currentState.selectedDocument, conversationText);
+        const documentContent = await generateDocument(analysisState.selectedDocument, conversationText);
         const pdfBlob = generatePDF(documentContent, documentType);
 
         const testDocuments = JSON.parse(localStorage.getItem('test_documents') || '[]');
