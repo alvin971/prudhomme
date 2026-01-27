@@ -24,6 +24,13 @@ function formatConversationHistory(messages: Message[]): string {
     .join('\n\n');
 }
 
+function formatConversationHistoryWithoutLastUserMessage(messages: Message[]): string {
+  const messagesWithoutLast = messages.slice(0, messages.length - 1);
+  return messagesWithoutLast
+    .map(m => `${m.role === 'user' ? 'Utilisateur' : 'Assistant'}: ${m.content}`)
+    .join('\n\n');
+}
+
 export async function processWithAnalysis(
   messages: Message[],
   currentState: AnalysisState,
@@ -101,10 +108,12 @@ export async function processWithAnalysis(
         newState.phase = 'extracting_data';
         newState.extractionLoopCount = 1;
 
-        onPhaseChange('extracting_data', '📝 Vérification des informations...');
+        onPhaseChange('extracting_data', '📝 Collecte des informations...');
 
-        // Prompt 4 : Collecte conversationnelle
-        const conversationText = formatConversationHistory(messages);
+        // IMPORTANT: On ne construit pas l'historique avec le message de choix
+        // pour que l'IA ne soit pas confus et pose des questions sur donnees_necessaires
+        const conversationText = formatConversationHistoryWithoutLastUserMessage(messages);
+
         const conversationalResponse = await sendConversationalDataCollection(selectedDoc, conversationText);
 
         if (shouldGenerateDocument(conversationalResponse)) {
