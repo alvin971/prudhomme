@@ -66,7 +66,7 @@ Juste répondre : "GENERATE_DOCUMENT"`;
  * Identique à celui dans ai_chat_direct_page.dart
  */
 export function getDocumentGenerationPrompt(selectedDocument: any, conversationText: string): string {
-  return `Tu es un avocat senior expert en rédaction juridique. Ta mission est de générer UN DOCUMENT JURIDIQUE COMPLET EN UNE SEULE FOIS en respectant SCRUPULEUSEMENT l'architecture de document fournie.
+  const prompt = `Tu es un avocat senior expert en rédaction juridique. Ta mission est de générer UN DOCUMENT JURIDIQUE COMPLET EN UNE SEULE FOIS en respectant SCRUPULEUSEMENT l'architecture de document fournie.
 
 🎯 INPUTS (DONNÉES D'ENTRÉE)
 TYPE_DOCUMENT : ${selectedDocument.document_nom}
@@ -282,6 +282,11 @@ INFORMATIONS DU CAS:
 ${conversationText}
 
 C'est tout. Génère un chef-d'œuvre juridique.`;
+
+  console.log('=== PROMPT DE GÉNÉRATION ===');
+  console.log(prompt);
+  console.log('=== FIN PROMPT ===\n');
+}
 }
 
 /**
