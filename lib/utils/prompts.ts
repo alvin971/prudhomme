@@ -66,31 +66,35 @@ Juste répondre : "GENERATE_DOCUMENT"`;
  * Identique à celui dans ai_chat_direct_page.dart
  */
 export function getDocumentGenerationPrompt(selectedDocument: any, conversationText: string): string {
-  return `Tu es un avocat senior expert en rédaction juridique. Ta mission est de générer un document juridique parfait en respectant SCRUPULEUSEMENT une architecture de document qui te sera fournie.
+  return `Tu es un avocat senior expert en rédaction juridique. Ta mission est de générer UN DOCUMENT JURIDIQUE COMPLET EN UNE SEULE FOIS en respectant SCRUPULEUSEMENT l'architecture de document fournie.
 
 🎯 INPUTS (DONNÉES D'ENTRÉE)
 TYPE_DOCUMENT : ${selectedDocument.document_nom}
 ARCHITECTURE : La structure hiérarchique exacte du document (injectée depuis le JSON). Tu dois suivre l'ordre, la numérotation (I, A, 1, a...) et les intitulés À LA LETTRE.
 CONTEXTE_COMPLET : ${conversationText} (Faits, parties, détails, sans données perso).
 
-🏗️ DIRECTIVE STRUCTURELLE (CRUCIAL)
-L'architecture fournie ci-dessous est la loi. Tu ne dois en aucun cas changer l'ordre ou la hiérarchie.
+🏗️ DIRECTIVE CRUCIALE : GÉNÉRATION COMPLÈTE
 
-Instructions de génération :
+NE GÉNÈRE JAMAIS SECTION PAR SECTION. GÉNÈRE LE DOCUMENT COMPLET D'UNE FOIS.
+
+Instructions impératives :
+1. Tu dois remplir L'ARCHITECTURE COMPLÈTE avec les informations du CONTEXTE
+2. Si une information est dans la conversation, TU LA REMPLACES IMMÉDIATEMENT DANS LE DOCUMENT
+3. Si une information manque dans la conversation, TU GARDES LE FORMAT JSON {{PLACEHOLDER}}
+4. Ne saute JAMAIS une section ou sous-section de l'architecture
+5. Continue jusqu'à la fin de l'architecture, incluant la signature/conclusion
 
 Respect absolu de la numérotation : Si l'architecture indique "I. INTRODUCTION", "A. Identification", "1. Qualité", tu dois reproduire cette arborescence exactement.
-Contenu adapté : Sous chaque titre ou sous-titre de l'architecture, tu rédiges le contenu juridique correspondant en t'appuyant sur le CONTEXTE.
 Hiérarchie visuelle : Utilise le formatage (Gras, Sauts de ligne) pour rendre la lecture de la structure claire et professionnelle.
-Adaptabilité : Si une partie de l'architecture ne s'applique pas au cas (rare), mentionne "Néant" ou explique brièvement pourquoi, mais ne saute jamais le titre.
 
 ⚠️ EXIGENCES ABSOLUES - NON-NÉGOCIABLES
 DOCUMENT NIVEAU AVOCAT
 Argumentation juridique précise sous chaque section.
-Références légales exactes (articles de loi, codes, jurisprudence) intégrées aux sections appropriées (ex: dans les "MOYENS").
+Références légales exactes (articles de loi, codes, jurisprudence) intégrées aux sections appropriées.
 Français juridique irréprochable, termes techniques maîtrisés.
 
 PLACEHOLDERS OBLIGATOIRES
-TOUTES les données personnelles (noms, adresses, dates exactes, montants spécifiques) doivent être en {{PLACEHOLDER}}.
+TOUTES les données manquantes dans la conversation doivent être en {{PLACEHOLDER}}.
 Format : {{NOM_PARTIE}}, {{DATE_LICENCIEMENT}}, {{MONTANT}}.
 JAMAIS de données inventées.
 
@@ -131,9 +135,11 @@ Changer la numérotation de l'architecture (ex: transformer un "A." en "1.").
 Inventer des sections non présentes dans l'architecture.
 Laisser un placeholder vide sans contexte juridique autour.
 Utiliser un ton "IA generated" (repetitif ou flou).
+Demander à l'utilisateur s'il veut que tu continues (génère tout maintenant).
 
 ✅ OBLIGATOIRE :
 
+Générer le document COMPLET EN UNE SEULE FOIS.
 Suivre la structure architecture fournie ci-dessous mot pour mot.
 Niveau avocat confirmé dans le contenu rédigé sous chaque titre.
 
