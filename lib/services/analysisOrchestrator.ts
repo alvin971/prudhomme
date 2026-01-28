@@ -103,6 +103,9 @@ export async function processWithAnalysis(
     if (choice) {
       const selectedDoc = await findDocumentById(choice.document_id);
 
+      console.log('🔍 [orchestrator] Doc selected:', choice.document_id, 'Full doc:', selectedDoc);
+      console.log('🔍 [orchestrator] Has architecture?', selectedDoc?.architecture ? 'YES' : 'NO');
+
       if (selectedDoc) {
         newState.selectedDocument = selectedDoc;
         newState.phase = 'extracting_data';
