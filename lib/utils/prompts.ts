@@ -281,11 +281,13 @@ Consulter un avocat en cas de doute ou complexité.
 INFORMATIONS DU CAS:
 ${conversationText}
 
-C'est tout. Génère un chef-d'œuvre juridique.`;
+C'est tout. Génère un chef-d'œuvre juridique.`
 
   console.log('=== PROMPT DE GÉNÉRATION ===');
   console.log(prompt);
   console.log('=== FIN PROMPT ===\n');
+
+  return prompt;
 }
 
 /**
