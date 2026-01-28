@@ -1,16 +1,3 @@
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
-
-const LOG_DIR = join(process.cwd(), 'logs');
-const LOG_FILE = join(LOG_DIR, 'prompts.log');
-
-// Create logs directory if it doesn't exist
-(async () => {
-  try {
-    await writeFile(LOG_FILE, '');
-  } catch (e) {}
-})();
-
 export async function logPrompt(
   phase: string,
   promptType: string,
@@ -20,7 +7,7 @@ export async function logPrompt(
 ) {
   try {
     const timestamp = new Date().toISOString();
-    const logEntry = `\n\n${'='.repeat(80)}\n`;
+    let logEntry = `\n\n${'='.repeat(80)}\n`;
     logEntry += `[${timestamp}] PHASE: ${phase} | TYPE: ${promptType}\n`;
     logEntry += `Max tokens: ${maxTokens || 'N/A'}\n`;
 
@@ -43,17 +30,8 @@ export async function logPrompt(
 
     logEntry += `\n${'='.repeat(80)}\n`;
 
-    await appendToFile(logEntry);
+    console.log(logEntry);
   } catch (e) {
-    // Silently fail to avoid breaking anything
     console.error('Logging error:', e);
-  }
-}
-
-async function appendToFile(content: string) {
-  try {
-    await writeFile(LOG_FILE, content, { flag: 'a' });
-  } catch (e) {
-    console.error('Failed to write to log file:', e);
   }
 }
