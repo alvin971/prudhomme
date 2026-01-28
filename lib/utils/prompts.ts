@@ -287,7 +287,6 @@ C'est tout. Génère un chef-d'œuvre juridique.`;
   console.log(prompt);
   console.log('=== FIN PROMPT ===\n');
 }
-}
 
 /**
  * Détecte si l'IA demande à générer le document
