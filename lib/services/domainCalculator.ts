@@ -1,11 +1,15 @@
 import { AnalyseDomainesResult } from '../types/analysis';
 import { getDomainCalculationPrompt } from '../utils/analysisPrompts';
+import { logPrompt } from '../utils/logger';
 
 export async function calculateDomains(
   groupeNoms: string[],
   conversationHistory: string
 ): Promise<AnalyseDomainesResult> {
   const prompt = getDomainCalculationPrompt(groupeNoms, conversationHistory);
+
+  // Log prompt before sending
+  await logPrompt('DOMAIN_CALC', 'Domain Calculation', prompt);
 
   const response = await fetch('/api/chat', {
     method: 'POST',

@@ -1,4 +1,5 @@
 import { CHATBOT_SYSTEM_PROMPT, getDocumentGenerationPrompt } from '../utils/prompts';
+import { logPrompt } from '../utils/logger';
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -47,6 +48,9 @@ export async function generateDocument(
   conversationText: string
 ): Promise<string> {
   const systemPrompt = getDocumentGenerationPrompt(selectedDocument, conversationText);
+
+  // Log prompt before sending
+  await logPrompt('DOCUMENT_GEN', 'Document Generation', systemPrompt, undefined, 3000);
 
   return sendMessageToAI(
     [{ role: 'user', content: 'Génère le document complet maintenant.' }],

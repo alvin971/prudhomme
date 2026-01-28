@@ -1,4 +1,5 @@
 import { DocumentJuridique, AnalyseDomainesResult } from '../types/analysis';
+import { logPrompt } from './logger';
 
 // ====================================================================
 // PROMPT 2 - CALCUL DES DOMAINES PERTINENTS

@@ -1,5 +1,6 @@
 import { DocumentJuridique, AnalyseDomainesResult, DocumentsSelectionResult } from '../types/analysis';
 import { getDocumentCalculationPrompt } from '../utils/analysisPrompts';
+import { logPrompt } from '../utils/logger';
 
 export async function calculateDocuments(
   documents: DocumentJuridique[],
@@ -7,6 +8,9 @@ export async function calculateDocuments(
   conversationHistory: string
 ): Promise<DocumentsSelectionResult> {
   const prompt = getDocumentCalculationPrompt(documents, domainesResult, conversationHistory);
+
+  // Log prompt before sending
+  await logPrompt('DOC_SELECTION', 'Document Selection', prompt);
 
   const response = await fetch('/api/chat', {
     method: 'POST',
