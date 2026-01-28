@@ -35,7 +35,16 @@ export async function sendMessageToAI(
     }
 
     const data = await response.json();
-    return data.message;
+    const aiMessage = data.content[0].text;
+
+    console.log('========================================');
+    console.log('RÉPONSE DE L\'IA:');
+    console.log('========================================');
+    console.log(aiMessage);
+    console.log('========================================');
+    console.log('');
+
+    return aiMessage;
   } catch (error) {
     console.error('Erreur API Anthropic:', error);
     throw new Error('Impossible de contacter l\'IA juridique');
@@ -48,9 +57,16 @@ export async function generateDocument(
 ): Promise<string> {
   const systemPrompt = getDocumentGenerationPrompt(selectedDocument, conversationText);
 
+  console.log('========================================');
+  console.log('PROMPT SYSTÈME ENVOYÉ À L\'IA:');
+  console.log('========================================');
+  console.log(systemPrompt);
+  console.log('========================================');
+  console.log('');
+
   return sendMessageToAI(
     [{ role: 'user', content: 'Génère le document complet maintenant.' }],
     systemPrompt,
-    3000
+    8000  // Augmenté pour garantir la génération complète
   );
 }
