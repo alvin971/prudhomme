@@ -53,7 +53,7 @@ export async function generateDocument(
   await logPrompt('DOCUMENT_GEN', 'Document Generation', systemPrompt, undefined, 8192);
 
   return sendMessageToAI(
-    [{ role: 'user', content: 'Génère le document complet maintenant.' }],
+    [{ role: 'user', content: 'Génère le document juridique complet immédiatement. Ne pose aucune question, ne demande aucune confirmation, ne propose aucun choix. Commence directement par la rédaction du document en suivant l\'architecture fournie. Rédige TOUT le document d\'un seul bloc sans interruption.' }],
     systemPrompt,
     8192
   );
