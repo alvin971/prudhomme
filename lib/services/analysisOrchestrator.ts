@@ -2,9 +2,9 @@ import { AnalysisState, AnalysisPhase, Message } from '../types/analysis';
 import { calculateDomains } from './domainCalculator';
 import { calculateDocuments } from './documentCalculator';
 import { sendConversationalDataCollection } from './dataExtractor';
-import { getUniqueGroupeNoms, filterDocumentsByDomains, findDocumentById } from '../utils/jsonFilter';
+import { getGroupNames, filterDocumentsByDomains, findDocumentById } from '../utils/jsonFilter';
 import { detectUserChoice } from '../utils/choiceDetector';
-import { shouldGenerateDocument } from '../utils/prompts'; // Fonction existante
+import { shouldGenerateDocument } from '../utils/prompts';
 
 export function createInitialAnalysisState(): AnalysisState {
   return {

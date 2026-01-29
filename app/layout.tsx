@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/lib/contexts/AuthContext'
 import { DocumentsProvider } from '@/lib/contexts/DocumentsContext'
+import { CacheInitializer } from './cache-initializer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -25,6 +26,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className={inter.className}>
+        <CacheInitializer />
         <AuthProvider>
           <DocumentsProvider>
             {children}

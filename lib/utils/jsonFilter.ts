@@ -1,28 +1,41 @@
 import { DocumentJuridique } from '../types/analysis';
+import {
+  getDocumentCache,
+  getAllDocuments,
+  getGroupNames,
+  findDocumentById,
+  getGroupMap,
+} from './documentCache';
 
-let cachedDocuments: DocumentJuridique[] | null = null;
-
-export async function loadDocumentsJSON(): Promise<DocumentJuridique[]> {
-  if (cachedDocuments) return cachedDocuments;
-
-  const response = await fetch('/documents_juridiques.json');
-  if (!response.ok) throw new Error('Impossible de charger le JSON');
-
-  cachedDocuments = await response.json();
-  return cachedDocuments!;
+/**
+ * Charge les documents depuis le cache en mémoire.
+ * Note: Le cache est initialisé au démarrage de l'application via initializeDocumentCache().
+ * @returns Tableau de tous les documents.
+ */
+export function loadDocumentsJSON(): DocumentJuridique[] {
+  return getAllDocuments();
 }
 
-export async function getUniqueGroupeNoms(): Promise<string[]> {
-  const documents = await loadDocumentsJSON();
-  const groupeSet = new Set(documents.map(d => d.groupe_nom));
-  return Array.from(groupeSet).sort();
+/**
+ * Récupère la liste des noms de groupes de domaines.
+ * @returns Tableau trié des noms de groupes.
+ */
+export function getUniqueGroupeNoms(): string[] {
+  return getGroupNames();
 }
 
-export async function filterDocumentsByDomains(
+/**
+ * Filtre les documents par domaine.
+ * @param domaines - Liste des noms de domaines à filtrer.
+ * @param limit - Nombre maximum de documents à retourner.
+ * @returns Tableau de documents filtrés.
+ */
+export function filterDocumentsByDomains(
   domaines: string[],
   limit: number = 40
-): Promise<DocumentJuridique[]> {
-  const documents = await loadDocumentsJSON();
+): DocumentJuridique[] {
+  const documents = getAllDocuments();
+  const groupesMap = getGroupMap();
   const domainesLower = domaines.map(d => d.toLowerCase());
 
   return documents
@@ -30,7 +43,11 @@ export async function filterDocumentsByDomains(
     .slice(0, limit);
 }
 
-export async function findDocumentById(id: number): Promise<DocumentJuridique | null> {
-  const documents = await loadDocumentsJSON();
-  return documents.find(d => d.document_id === id) || null;
+/**
+ * Trouve un document par son ID.
+ * @param id - L'ID du document à trouver.
+ * @returns Le document trouvé ou null si non trouvé.
+ */
+export function findDocumentById(id: number): DocumentJuridique | null {
+  return findDocumentById(id) ?? null;
 }

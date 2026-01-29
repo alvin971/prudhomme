@@ -163,7 +163,7 @@ HISTORIQUE DE CONVERSATION
 ${conversationHistory}
 
 MISSION
-ANALYSE LA LISTE : Lis attentivement {selectedDocument.donnees_necessaires}. C'est la liste absolue de tout ce dont tu as besoin. Rien de moins, rien de plus.
+ANALYSE LA LISTE : Lis attentivement ${selectedDocument.donnees_necessaires}. C'est la liste absolue de tout ce dont tu as besoin. Rien de moins, rien de plus.
 RE-ÉVALUATION : À chaque tour de conversation, compare cette liste avec tout ce qui a été dit dans l'historique.
 DÉCISION :
 SI 100% des informations sont présentes : Passe à l'étape de transition.
