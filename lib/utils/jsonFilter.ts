@@ -1,10 +1,9 @@
 import { DocumentJuridique } from '../types/analysis';
 import {
-  getDocumentCache,
   getAllDocuments,
   getGroupNames,
-  findDocumentById,
   getGroupMap,
+  findDocumentById as findFromCache,
 } from './documentCache';
 
 /**
@@ -49,5 +48,5 @@ export function filterDocumentsByDomains(
  * @returns Le document trouvé ou null si non trouvé.
  */
 export function findDocumentById(id: number): DocumentJuridique | null {
-  return findDocumentById(id) ?? null;
+  return findFromCache(id) ?? null;
 }
