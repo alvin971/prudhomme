@@ -50,3 +50,11 @@ export function filterDocumentsByDomains(
 export function findDocumentById(id: number): DocumentJuridique | null {
   return findFromCache(id) ?? null;
 }
+
+// Re-export document cache functions for convenience
+export {
+  getAllDocuments,
+  getGroupNames,
+  getGroupMap,
+  findDocumentById as findFromCache,
+} from './documentCache';
