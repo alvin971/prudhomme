@@ -9,6 +9,7 @@ export type AnalysisPhase =
 export interface DocumentJuridique {
   document_id: number;
   groupe_nom: string;
+  groupe_id?: number;
   document_nom: string;
   donnees_necessaires: string;
   architecture?: string;
