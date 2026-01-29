@@ -64,3 +64,9 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
+
+export interface DocumentCache {
+  allDocs: Map<number, DocumentJuridique>;
+  groupeNoms: string[];
+  groupesMap: Map<string, number>;
+}
