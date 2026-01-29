@@ -157,7 +157,7 @@ Type :
 ${selectedDocument.document_nom}
 
 Liste de contraintes strictes (100% des informations nécessaires sont requises pour générer le document) :
-{selectedDocument.donnees_necessaires}
+${selectedDocument.donnees_necessaires}
 
 HISTORIQUE DE CONVERSATION
 ${conversationHistory}

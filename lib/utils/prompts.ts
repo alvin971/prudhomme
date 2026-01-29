@@ -144,7 +144,9 @@ Suivre la structure architecture fournie ci-dessous mot pour mot.
 Niveau avocat confirmé dans le contenu rédigé sous chaque titre.
 
 📋 ARCHITECTURE DU DOCUMENT À SUIVRE (JSON INJECTÉ)
+---
 ${selectedDocument.architecture || "Aucune architecture spécifique disponible"}
+---
 
 📄 CONTEXTE ET INFORMATIONS DU CAS
 ${conversationText}
