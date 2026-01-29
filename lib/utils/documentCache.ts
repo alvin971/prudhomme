@@ -44,7 +44,7 @@ export async function initializeDocumentCache(): Promise<void> {
           new Set(allDocs.map((doc: DocumentJuridique) => doc.groupe_nom))
         ).sort(),
         groupesMap: new Map(
-          allDocs.map((doc: DocumentJuridique) => [doc.groupe_nom, doc.groupe_id])
+          allDocs.filter((doc: DocumentJuridique) => doc.groupe_id !== undefined).map((doc: DocumentJuridique) => [doc.groupe_nom, doc.groupe_id!])
         ),
       };
 
