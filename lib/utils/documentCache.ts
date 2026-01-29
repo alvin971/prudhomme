@@ -33,7 +33,7 @@ export async function initializeDocumentCache(): Promise<void> {
         throw new Error('Impossible de charger le JSON des documents');
       }
 
-      const allDocs = await response.json();
+      const allDocs = await response.json() as DocumentJuridique[];
 
       // Construction du cache
       documentCache = {
