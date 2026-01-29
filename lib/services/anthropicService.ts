@@ -50,11 +50,11 @@ export async function generateDocument(
   const systemPrompt = getDocumentGenerationPrompt(selectedDocument, conversationText);
 
   // Log prompt before sending
-  await logPrompt('DOCUMENT_GEN', 'Document Generation', systemPrompt, undefined, 3000);
+  await logPrompt('DOCUMENT_GEN', 'Document Generation', systemPrompt, undefined, 8192);
 
   return sendMessageToAI(
     [{ role: 'user', content: 'Génère le document complet maintenant.' }],
     systemPrompt,
-    3000
+    8192
   );
 }
