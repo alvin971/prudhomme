@@ -2,8 +2,7 @@ import { AnalysisState, AnalysisPhase, Message } from '../types/analysis';
 import { calculateDomains } from './domainCalculator';
 import { calculateDocuments } from './documentCalculator';
 import { sendConversationalDataCollection } from './dataExtractor';
-import { getGroupNames, filterDocumentsByDomains, findDocumentById } from '../utils/jsonFilter';
-import { getUniqueGroupeNoms as getGroupNamesFromCache } from '../utils/documentCache';
+import { getUniqueGroupeNoms, filterDocumentsByDomains, findDocumentById } from '../utils/jsonFilter';
 import { detectUserChoice } from '../utils/choiceDetector';
 import { shouldGenerateDocument } from '../utils/prompts';
 
@@ -62,7 +61,7 @@ export async function processWithAnalysis(
     onPhaseChange('calculating_domains', '🔍 Analyse de votre situation...');
 
     const conversationText = formatConversationHistory(messages);
-    const groupeNoms = await getGroupNamesFromCache();
+    const groupeNoms = await getUniqueGroupeNoms();
 
     // Prompt 2 : Calcul des domaines
     const domainesResult = await calculateDomains(groupeNoms, conversationText);
