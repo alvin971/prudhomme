@@ -58,6 +58,6 @@ export async function generateDocument(
     [{ role: 'user', content: fullPrompt }],
     '',
     8192,
-    'claude-3-5-haiku-20241022'
+    'claude-sonnet-4-5-20250929'
   );
 }
