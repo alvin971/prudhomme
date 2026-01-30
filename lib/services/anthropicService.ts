@@ -49,14 +49,14 @@ export async function generateDocument(
   selectedDocument: any,
   conversationText: string
 ): Promise<string> {
-  const systemPrompt = getDocumentGenerationPrompt(selectedDocument, conversationText);
+  const fullPrompt = getDocumentGenerationPrompt(selectedDocument, conversationText);
 
   // Log prompt before sending
-  await logPrompt('DOCUMENT_GEN', 'Document Generation', systemPrompt, undefined, 8192);
+  await logPrompt('DOCUMENT_GEN', 'Document Generation', undefined, [{ role: 'user', content: fullPrompt }], 8192);
 
   return sendMessageToAI(
-    [{ role: 'user', content: 'Génère le document juridique complet immédiatement. Ne pose aucune question, ne demande aucune confirmation, ne propose aucun choix. Commence directement par la rédaction du document en suivant l\'architecture fournie. Rédige TOUT le document d\'un seul bloc sans interruption.' }],
-    systemPrompt,
+    [{ role: 'user', content: fullPrompt }],
+    '',
     8192,
     'claude-sonnet-4-5-20250514'
   );
