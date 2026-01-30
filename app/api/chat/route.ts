@@ -8,7 +8,7 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, systemPrompt, maxTokens = 1024 } = await req.json();
+    const { messages, systemPrompt, maxTokens = 1024, model = 'claude-3-5-haiku-20241022' } = await req.json();
 
     // Log prompt sent to LLM
     await logPrompt('CHAT', 'Anthropic API Request', systemPrompt, messages, maxTokens);
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-haiku-20241022',
+        model: model,
         max_tokens: maxTokens,
         system: systemPrompt,
         messages: messages,

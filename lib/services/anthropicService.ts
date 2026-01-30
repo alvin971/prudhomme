@@ -9,7 +9,8 @@ export interface Message {
 export async function sendMessageToAI(
   messages: Message[],
   systemPrompt: string = CHATBOT_SYSTEM_PROMPT,
-  maxTokens: number = 1024
+  maxTokens: number = 1024,
+  model: string = 'claude-3-5-haiku-20241022'
 ): Promise<string> {
   try {
     // Nettoyer les messages pour garder seulement role et content
@@ -28,6 +29,7 @@ export async function sendMessageToAI(
         messages: cleanMessages,
         systemPrompt: systemPrompt,
         maxTokens: maxTokens,
+        model: model,
       }),
     });
 
@@ -47,14 +49,15 @@ export async function generateDocument(
   selectedDocument: any,
   conversationText: string
 ): Promise<string> {
-  const systemPrompt = getDocumentGenerationPrompt(selectedDocument, conversationText);
+  const fullPrompt = getDocumentGenerationPrompt(selectedDocument, conversationText);
 
   // Log prompt before sending
-  await logPrompt('DOCUMENT_GEN', 'Document Generation', systemPrompt, undefined, 8192);
+  await logPrompt('DOCUMENT_GEN', 'Document Generation', undefined, [{ role: 'user', content: fullPrompt }], 8192);
 
   return sendMessageToAI(
-    [{ role: 'user', content: 'Génère le document juridique complet immédiatement. Ne pose aucune question, ne demande aucune confirmation, ne propose aucun choix. Commence directement par la rédaction du document en suivant l\'architecture fournie. Rédige TOUT le document d\'un seul bloc sans interruption.' }],
-    systemPrompt,
-    8192
+    [{ role: 'user', content: fullPrompt }],
+    '',
+    8192,
+    'claude-sonnet-4-5-20250514'
   );
 }
