@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: model,
         max_tokens: maxTokens,
-        system: systemPrompt,
+        ...(systemPrompt ? { system: systemPrompt } : {}),
         messages: messages,
       }),
     });
