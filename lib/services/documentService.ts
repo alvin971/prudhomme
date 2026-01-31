@@ -19,15 +19,29 @@ export function replacePlaceholders(
 ): string {
   let result = content;
   Object.entries(placeholders).forEach(([key, value]) => {
+    // Remplacer le format {{clé}}
     result = result.replaceAll(`{{${key}}}`, value);
+    // Remplacer le format [clé]
+    result = result.replaceAll(`[${key}]`, value);
   });
   return result;
 }
 
 export function extractPlaceholders(content: string): string[] {
-  const regex = /\{\{([A-Z_]+)\}\}/g;
-  const matches = content.matchAll(regex);
-  const placeholders = Array.from(matches, m => m[1]);
+  const placeholders: string[] = [];
+
+  // Format 1 : {{...}} — double accolades (tout contenu entre {{ }})
+  const braceRegex = /\{\{([^}]+)\}\}/g;
+  for (const match of content.matchAll(braceRegex)) {
+    placeholders.push(match[1].trim());
+  }
+
+  // Format 2 : [...] — crochets avec texte en majuscules (min 3 chars, évite [1], [a], etc.)
+  const bracketRegex = /\[([A-ZÀÂÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÉÈÊËÏÎÔÙÛÜÇ _'']{2,})\]/g;
+  for (const match of content.matchAll(bracketRegex)) {
+    placeholders.push(match[1].trim());
+  }
+
   return [...new Set(placeholders)];
 }
 
