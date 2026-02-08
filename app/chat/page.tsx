@@ -550,13 +550,18 @@ export default function ChatPage() {
               style={{
                 minHeight: '44px',
                 lineHeight: '1.5',
-                scrollbarWidth: 'thin'
+                scrollbarWidth: 'thin',
+                boxSizing: 'content-box'
               }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
-                target.style.height = '44px';
+                target.style.height = 'auto';
                 const newHeight = Math.min(target.scrollHeight, 144);
                 target.style.height = newHeight + 'px';
+              }}
+              onTouchStart={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
               }}
             />
           )}
