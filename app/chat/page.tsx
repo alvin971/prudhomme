@@ -559,10 +559,6 @@ export default function ChatPage() {
                 const newHeight = Math.min(target.scrollHeight, 144);
                 target.style.height = newHeight + 'px';
               }}
-              onTouchStart={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-              }}
             />
           )}
 
