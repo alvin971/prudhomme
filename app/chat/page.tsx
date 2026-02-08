@@ -59,6 +59,13 @@ export default function ChatPage() {
     inputRef.current?.focus();
   }, []);
 
+  // Reset textarea height to minimum when input is empty
+  useEffect(() => {
+    if (inputRef.current && input.length === 0) {
+      inputRef.current.style.height = '44px';
+    }
+  }, [input]);
+
   const typewriterEffect = async (text: string) => {
     setTypingMessage('');
     for (let i = 0; i < text.length; i++) {
