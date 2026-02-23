@@ -10,7 +10,7 @@ export async function sendMessageToAI(
   messages: Message[],
   systemPrompt: string = CHATBOT_SYSTEM_PROMPT,
   maxTokens: number = 1024,
-  model: string = 'claude-3-5-haiku-20241022'
+  model: string = 'claude-haiku-4-5-20251001'
 ): Promise<string> {
   try {
     // Nettoyer les messages pour garder seulement role et content
