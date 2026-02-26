@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useState, useEffect } from 'react';
-// import { db } from '../firebase';
-// import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { db } from '../firebase';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
 import { Document } from '../services/documentService';
 
@@ -29,25 +29,23 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // TODO: Firebase non configuré
-      // const q = query(
-      //   collection(db, 'documents'),
-      //   where('userId', '==', user.uid)
-      // );
-      // const snapshot = await getDocs(q);
-      // const docs = snapshot.docs.map(docSnap => {
-      //   const data = docSnap.data();
-      //   return {
-      //     id: docSnap.id,
-      //     ...data,
-      //     createdAt: data.createdAt instanceof Timestamp
-      //       ? data.createdAt.toDate()
-      //       : new Date(data.createdAt),
-      //   } as Document;
-      // });
+      const q = query(
+        collection(db, 'documents'),
+        where('userId', '==', user.uid)
+      );
+      const snapshot = await getDocs(q);
+      const docs = snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          createdAt: data.createdAt instanceof Timestamp
+            ? data.createdAt.toDate()
+            : new Date(data.createdAt),
+        } as Document;
+      });
 
-      // Mock data pour le développement
-      setDocuments([]);
+      setDocuments(docs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
     } catch (error) {
       console.error('Erreur chargement documents:', error);
     } finally {
@@ -62,18 +60,14 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
   const addDocument = async (document: Omit<Document, 'id' | 'userId'>): Promise<string> => {
     if (!user) throw new Error('Non authentifié');
 
-    // TODO: Firebase non configuré
-    // const docRef = await addDoc(collection(db, 'documents'), {
-    //   ...document,
-    //   userId: user.uid,
-    //   createdAt: Timestamp.fromDate(document.createdAt),
-    // });
+    const docRef = await addDoc(collection(db, 'documents'), {
+      ...document,
+      userId: user.uid,
+      createdAt: Timestamp.fromDate(document.createdAt),
+    });
 
-    // Mock data
-    const mockId = 'mock-doc-' + Date.now();
-    setDocuments([]);
     await loadDocuments();
-    return mockId;
+    return docRef.id;
   };
 
   const updateDocumentReviewStatus = async (
@@ -81,20 +75,18 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
     reviewStatus: string,
     reviewId?: string
   ) => {
-    // TODO: Firebase non configuré
-    // const docRef = doc(db, 'documents', id);
-    // await updateDoc(docRef, {
-    //   reviewStatus,
-    //   ...(reviewId && { reviewId }),
-    //   lastUpdated: Timestamp.now(),
-    // });
+    const docRef = doc(db, 'documents', id);
+    await updateDoc(docRef, {
+      reviewStatus,
+      ...(reviewId && { reviewId }),
+      lastUpdated: Timestamp.now(),
+    });
     await loadDocuments();
   };
 
   const deleteDocument = async (id: string) => {
-    // TODO: Firebase non configuré
-    // const docRef = doc(db, 'documents', id);
-    // await deleteDoc(docRef);
+    const docRef = doc(db, 'documents', id);
+    await deleteDoc(docRef);
     await loadDocuments();
   };
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { db } from '@/lib/firebase';
+import { doc, updateDoc, Timestamp } from 'firebase/firestore';
 
 export const runtime = 'edge';
 
@@ -40,15 +42,14 @@ export async function POST(req: NextRequest) {
         const { documentId, userId } = session.metadata || {};
 
         if (documentId && userId) {
-          // TODO: Update document status in Firestore
-          // Commenté car Firebase n'est pas configuré
-          // const docRef = doc(db, 'documents', documentId);
-          // await updateDoc(docRef, {
-          //   reviewStatus: 'pending',
-          //   reviewId: session.id,
-          //   paymentStatus: 'paid',
-          //   lastUpdated: Timestamp.now(),
-          // });
+          // Update document status in Firestore
+          const docRef = doc(db, 'documents', documentId);
+          await updateDoc(docRef, {
+            reviewStatus: 'pending',
+            reviewId: session.id,
+            paymentStatus: 'paid',
+            lastUpdated: Timestamp.now(),
+          });
 
           console.log(`Payment successful for document ${documentId}`);
         }
@@ -60,13 +61,11 @@ export async function POST(req: NextRequest) {
         const { documentId } = session.metadata || {};
 
         if (documentId) {
-          // TODO: Update document status in Firestore
-          // Commenté car Firebase n'est pas configuré
-          // const docRef = doc(db, 'documents', documentId);
-          // await updateDoc(docRef, {
-          //   paymentStatus: 'expired',
-          //   lastUpdated: Timestamp.now(),
-          // });
+          const docRef = doc(db, 'documents', documentId);
+          await updateDoc(docRef, {
+            paymentStatus: 'expired',
+            lastUpdated: Timestamp.now(),
+          });
 
           console.log(`Payment session expired for document ${documentId}`);
         }
@@ -88,14 +87,12 @@ export async function POST(req: NextRequest) {
             const { documentId } = sessions.data[0].metadata || {};
 
             if (documentId) {
-              // TODO: Update document status in Firestore
-              // Commenté car Firebase n'est pas configuré
-              // const docRef = doc(db, 'documents', documentId);
-              // await updateDoc(docRef, {
-              //   reviewStatus: 'refunded',
-              //   paymentStatus: 'refunded',
-              //   lastUpdated: Timestamp.now(),
-              // });
+              const docRef = doc(db, 'documents', documentId);
+              await updateDoc(docRef, {
+                reviewStatus: 'refunded',
+                paymentStatus: 'refunded',
+                lastUpdated: Timestamp.now(),
+              });
 
               console.log(`Refund processed for document ${documentId}`);
             }
