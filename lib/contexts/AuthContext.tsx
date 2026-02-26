@@ -1,15 +1,27 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { auth } from '../firebase';
-import {
-  User,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup
-} from 'firebase/auth';
+// import { auth } from '../firebase';
+// import {
+//   User,
+//   signInWithEmailAndPassword,
+//   createUserWithEmailAndPassword,
+//   signOut as firebaseSignOut,
+//   onAuthStateChanged,
+//   GoogleAuthProvider,
+//   signInWithPopup
+// } from 'firebase/auth';
+
+// Type User vide car Firebase non configuré
+interface User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  metadata?: {
+    creationTime?: number;
+    [key: string]: any;
+  };
+}
 
 interface AuthContextType {
   user: User | null;
@@ -27,28 +39,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-    return unsubscribe;
+    // TODO: Firebase non configuré
+    // const unsubscribe = onAuthStateChanged(auth, (user) => {
+    //   setUser(user);
+    //   setLoading(false);
+    // });
+    // return unsubscribe;
+
+    // Mock user pour le développement
+    setLoading(false);
+    setUser(null);
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    // TODO: Firebase non configuré
+    // await signInWithEmailAndPassword(auth, email, password);
+    console.log('signIn non disponible - Firebase non configuré');
   };
 
   const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    // TODO: Firebase non configuré
+    // await createUserWithEmailAndPassword(auth, email, password);
+    console.log('signUp non disponible - Firebase non configuré');
   };
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    // TODO: Firebase non configuré
+    // const provider = new GoogleAuthProvider();
+    // await signInWithPopup(auth, provider);
+    console.log('signInWithGoogle non disponible - Firebase non configuré');
   };
 
   const signOut = async () => {
-    await firebaseSignOut(auth);
+    // TODO: Firebase non configuré
+    // await firebaseSignOut(auth);
+    console.log('signOut non disponible - Firebase non configuré');
   };
 
   return (

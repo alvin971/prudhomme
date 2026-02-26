@@ -1,0 +1,19 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/analyze-document/route": "app-edge-has-no-entrypoint",
+  "/api/chat/route": "app-edge-has-no-entrypoint",
+  "/api/create-checkout-session/route": "app-edge-has-no-entrypoint",
+  "/api/transcribe/route": "app-edge-has-no-entrypoint",
+  "/api/webhooks/stripe/route": "app-edge-has-no-entrypoint",
+  "/auth/login/page": "app/auth/login/page.js",
+  "/auth/register/page": "app/auth/register/page.js",
+  "/cases/page": "app/cases/page.js",
+  "/chat/page": "app/chat/page.js",
+  "/document-analysis/page": "app/document-analysis/page.js",
+  "/documents/page": "app/documents/page.js",
+  "/lawyers/page": "app/lawyers/page.js",
+  "/legal-aid/page": "app/legal-aid/page.js",
+  "/page": "app/page.js",
+  "/profile/page": "app/profile/page.js"
+}

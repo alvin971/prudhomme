@@ -4,6 +4,9 @@ const nextConfig = {
   // swcMinify est maintenant activé par défaut dans Next.js 16
   // Configuration Turbopack (vide = utilise les valeurs par défaut)
   turbopack: {},
+  images: {
+    unoptimized: true,
+  },
 }
 
 module.exports = nextConfig

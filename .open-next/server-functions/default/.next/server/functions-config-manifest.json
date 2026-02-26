@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/analyze-document": {},
+    "/api/chat": {},
+    "/api/create-checkout-session": {},
+    "/api/transcribe": {},
+    "/api/webhooks/stripe": {}
+  }
+}

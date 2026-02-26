@@ -54,7 +54,7 @@ export default function ProfilePage() {
 
           <div className="border-t pt-4">
             <p className="text-sm text-gray-600">
-              <strong>Membre depuis :</strong> {new Date(user.metadata.creationTime || '').toLocaleDateString('fr-FR')}
+              <strong>Membre depuis :</strong> {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('fr-FR') : 'N/A'}
             </p>
           </div>
         </div>
